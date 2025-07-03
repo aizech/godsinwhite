@@ -22,3 +22,4 @@ langtrace-python-sdk
 deprecated
 aiofiles
 python-docx
+pypdf
