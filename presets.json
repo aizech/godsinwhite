@@ -1,0 +1,90 @@
+{
+  "Travel Planning": {
+    "agents": [
+      "airbnb",
+      "research_agent"
+    ],
+    "tools": [
+      "ddg_search",
+      "file_tools"
+    ]
+  },
+  "Speed Offering": {
+    "agents": [
+      "resource_manager",
+      "task_planner",
+      "project_manager"
+    ],
+    "tools": [
+      "web_search",
+      "file_ops",
+      "code_exec",
+      "db_access"
+    ]
+  },
+  "Data Analysis": {
+    "agents": [
+      "calculator",
+      "data_analyst",
+      "python_agent"
+    ],
+    "tools": [
+      "web_search",
+      "file_ops",
+      "code_exec",
+      "db_access"
+    ]
+  },
+  "Research": {
+    "agents": [
+      "research_agent",
+      "python_agent"
+    ],
+    "tools": [
+    ]
+  },
+  "Default": {
+    "agents": [
+      "calculator",
+      "data_analyst",
+      "python_agent",
+      "research_agent",
+      "investment_agent",
+      "gptimage1",
+      "resource_manager",
+      "task_planner",
+      "project_manager",
+      "airbnb",
+      "onlyfy_mcp",
+      "media_trend_analysis"
+    ],
+    "tools": [
+      "file_tools",
+      "shell_tools",
+      "gptimage1"
+    ]
+  },
+  "All": {
+    "agents": [
+      "calculator",
+      "data_analyst",
+      "python_agent",
+      "research_agent",
+      "investment_agent",
+      "gptimage1",
+      "resource_manager",
+      "task_planner",
+      "project_manager",
+      "airbnb",
+      "onlyfy_mcp",
+      "media_trend_analysis"
+    ],
+    "tools": [
+      "web_search",
+      "file_ops",
+      "code_exec",
+      "db_access",
+      "gptimage1"
+    ]
+  }
+}
