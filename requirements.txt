@@ -21,3 +21,4 @@ mcp
 langtrace-python-sdk
 deprecated
 aiofiles
+python-docx
