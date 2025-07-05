@@ -276,7 +276,7 @@ async def body() -> None:
                                     tool_id = tool.get("name") or tool.get("tool_name")
                                 else:
                                     tool_id = getattr(tool, "name", None) or getattr(tool, "tool_name", None)
-                                 
+
                                 # Only add if not already in the list
                                 is_duplicate = False
                                 for t in st.session_state["current_tool_calls"]:
