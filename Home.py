@@ -84,8 +84,8 @@ async def body() -> None:
     if "persistent_tool_calls" not in st.session_state:
         st.session_state["persistent_tool_calls"] = {}
     
-    st.sidebar.markdown("# :material/co_present: User Id")
-    user_id = st.sidebar.text_input("Username", value=windows_username)
+    # Clean, lean User ID widget
+    user_id = st.sidebar.text_input("👤 User ID", value=windows_username, help="Your username for this session")
 
     ####################################################################
     # Select Model

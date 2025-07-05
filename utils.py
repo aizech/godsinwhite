@@ -85,22 +85,26 @@ async def add_message(
 
 
 async def selected_model() -> str:
-    """Display a model selector in the sidebar."""
+    """Get the selected model from configuration or allow override."""
     model_options = {
-        #"claude-3-7-sonnet": "anthropic:claude-3-7-sonnet-latest",
         "gpt-4o": "openai:gpt-4o",
         "gpt-4o-mini": "openai:gpt-4o-mini",
-        #"gemini-2.5-pro": "google:gemini-2.5-pro-preview-03-25",
-        #"llama-4-scout": "groq:meta-llama/llama-4-scout-17b-16e-instruct",
     }
-
-    selected_model_key = st.sidebar.selectbox(
-        "Select a model",
-        options=list(model_options.keys()),
-        index=0,  # Default to claude-3-7-sonnet
-        key="model_selector",
-    )
-    model_id = model_options[selected_model_key]
+    
+    # Load model configuration
+    model_config_file = os.path.join(os.path.dirname(__file__), "model_config.json")
+    default_model = "gpt-4o"
+    
+    if os.path.exists(model_config_file):
+        try:
+            with open(model_config_file, 'r') as f:
+                model_config = json.load(f)
+                default_model = model_config.get("default_model", default_model)
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass
+    
+    # Use the default model from configuration
+    model_id = model_options.get(default_model, model_options["gpt-4o"])
     return model_id
 
 

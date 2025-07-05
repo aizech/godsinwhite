@@ -94,6 +94,27 @@ def save_presets(presets):
     with open(presets_file, 'w') as f:
         json.dump(presets, f, indent=2)
 
+# Function to save model configuration
+def save_model_config(model_config):
+    model_config_file = os.path.join(os.path.dirname(__file__), "..", "model_config.json")
+    with open(model_config_file, 'w') as f:
+        json.dump(model_config, f, indent=2)
+
+# Function to load model configuration
+def load_model_config():
+    model_config_file = os.path.join(os.path.dirname(__file__), "..", "model_config.json")
+    default_config = {
+        "default_model": "gpt-4o"
+    }
+    
+    if os.path.exists(model_config_file):
+        with open(model_config_file, 'r') as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return default_config
+    return default_config
+
 # Main function
 def main():
     st.title(f"{config.APP_ICON} Agent and Tool Configuration")
@@ -101,8 +122,11 @@ def main():
     # Load presets
     presets = load_presets()
     
+    # Load model configuration
+    model_config = load_model_config()
+    
     # Create tabs for different configuration sections
-    tab1, tab2 = st.tabs(["Configuration", "API Keys"])
+    tab1, tab2, tab3 = st.tabs(["Configuration", "Models", "API Keys"])
     
     with tab1:
         st.header("Configuration Management")
@@ -223,6 +247,35 @@ def main():
                     st.success("Configuration saved!")
     
     with tab2:
+        st.header("AI Model Configuration")
+        
+        # Define available models
+        model_options = {
+            "gpt-4o": "openai:gpt-4o",
+            "gpt-4o-mini": "openai:gpt-4o-mini",
+        }
+        
+        # Get current default model
+        current_default = model_config.get("default_model", "gpt-4o")
+        
+        # Model selection
+        st.subheader("Default Model")
+        st.write("Select the default model to use across the application. This model will be used for all HALO/GodsinWhite sessions.")    
+        
+        selected_model_key = st.selectbox(
+            "Select a model",
+            options=list(model_options.keys()),
+            index=list(model_options.keys()).index(current_default) if current_default in model_options else 0,
+            key="model_selector_config"
+        )
+        
+        # Save model configuration
+        if st.button("Save Model Configuration", type="primary"):
+            model_config["default_model"] = selected_model_key
+            save_model_config(model_config)
+            st.success(f"Default model set to {selected_model_key}")
+    
+    with tab3:
         st.header("API Keys Configuration")
         
         # Load existing environment variables

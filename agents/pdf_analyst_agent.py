@@ -33,11 +33,11 @@ def create_pdf_analyst_agent(
     # Create a copy of the model to avoid side effects of the model being modified
     model_copy = deepcopy(model)
 
-    pdf_path = Path(__file__).parent.joinpath("medical_history.pdf")
+    pdf_path = Path.cwd().joinpath("downloads", "medical_history.pdf")
 
     # Download the file using the download_file function
     download_file(
-        "https://github.com/aizech/godsinwhite/tree/main/demo_data/medical_history.pdf", str(pdf_path)
+        "https://github.com/aizech/godsinwhite/blob/main/demo_data/medical_history.pdf", str(pdf_path)
     )
 
     #agent.print_response(

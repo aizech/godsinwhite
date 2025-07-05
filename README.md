@@ -74,7 +74,6 @@ The application will be available at `http://localhost:8501` by default.
 ├── tools/              # Custom tool implementations
 ├── knowledge_docs/     # Knowledge base documents
 ├── assets/             # Static assets (images, icons)
-├── styles.css          # Custom CSS styling
 ├── config.py          # Application configuration
 └── utils.py           # Utility functions
 ```
