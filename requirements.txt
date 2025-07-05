@@ -22,4 +22,4 @@ urllib3
 sqlalchemy
 aiofiles
 python-docx
-pypdf2
+pypdf
