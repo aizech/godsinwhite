@@ -19,3 +19,4 @@ Requests==2.32.4
 rich==14.0.0
 streamlit==1.46.1
 urllib3==2.5.0
+sqlalchemy==2.0.46
