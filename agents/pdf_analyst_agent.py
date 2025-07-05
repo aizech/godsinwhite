@@ -37,7 +37,7 @@ def create_pdf_analyst_agent(
 
     # Download the file using the download_file function
     download_file(
-        "https://github.com/aizech/godsinwhite/tree/main/demo_data/medical_history.pdf", str(pdf_path)
+        "https://github.com/aizech/godsinwhite/blob/main/demo_data/medical_history.pdf", str(pdf_path)
     )
 
     #agent.print_response(
