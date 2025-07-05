@@ -264,7 +264,7 @@ async def body() -> None:
                     )
                     async for resp_chunk in run_response:
                         # Display tool calls if available and store them for later use
-                        if resp_chunk.tools and len(resp_chunk.tools) > 0:
+                        if hasattr(resp_chunk, 'tools') and resp_chunk.tools and len(resp_chunk.tools) > 0:
                             # Store the tools in the session state for this response
                             if "current_tool_calls" not in st.session_state:
                                 st.session_state["current_tool_calls"] = []
@@ -344,7 +344,7 @@ async def body() -> None:
                         await add_message("assistant", response, tool_calls_to_use)
                         # Clear the current tool calls for the next response
                         st.session_state["current_tool_calls"] = []
-                    elif halo.run_response is not None and halo.run_response.tools:
+                    elif halo.run_response is not None and hasattr(halo.run_response, 'tools') and halo.run_response.tools:
                         # Fallback to using tools from the run_response
                         tool_calls_to_use = halo.run_response.tools
                         # Store in persistent storage
