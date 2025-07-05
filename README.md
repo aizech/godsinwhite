@@ -49,14 +49,12 @@ pip install -r requirements.txt
 
 4. **Configure Environment Variables**
 
-Create a `.env` file in the project root and configure your API keys:
+**Important:** In the configuration page you can bring your own API keys.
+
+Alternatively, you can create a `.env` file in the project root and configure your API keys:
 
 ```env
 OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
-AZURE_OPENAI_API_KEY=your_azure_key
-GOOGLE_API_KEY=your_google_key
-# Add any other required API keys
 ```
 
 5. **Launch the Application**

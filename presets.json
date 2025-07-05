@@ -1,27 +1,4 @@
 {
-  "Travel Planning": {
-    "agents": [
-      "airbnb",
-      "research_agent"
-    ],
-    "tools": [
-      "ddg_search",
-      "file_tools"
-    ]
-  },
-  "Speed Offering": {
-    "agents": [
-      "resource_manager",
-      "task_planner",
-      "project_manager"
-    ],
-    "tools": [
-      "web_search",
-      "file_ops",
-      "code_exec",
-      "db_access"
-    ]
-  },
   "Data Analysis": {
     "agents": [
       "calculator",
@@ -37,10 +14,12 @@
   },
   "Research": {
     "agents": [
-      "research_agent",
-      "python_agent"
+      "data_analyst",
+      "pdf_analyst",
+      "pubmed"
     ],
     "tools": [
+      "web_search"
     ]
   },
   "Default": {
@@ -64,27 +43,14 @@
       "gptimage1"
     ]
   },
-  "All": {
+  "GodsinWhite": {
     "agents": [
-      "calculator",
-      "data_analyst",
-      "python_agent",
-      "research_agent",
-      "investment_agent",
-      "gptimage1",
-      "resource_manager",
-      "task_planner",
-      "project_manager",
-      "airbnb",
-      "onlyfy_mcp",
-      "media_trend_analysis"
+      "medical",
+      "medical_imaging",
+      "pubmed"
     ],
     "tools": [
-      "web_search",
-      "file_ops",
-      "code_exec",
-      "db_access",
-      "gptimage1"
+      "web_search"
     ]
   }
 }

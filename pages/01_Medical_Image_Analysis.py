@@ -8,6 +8,7 @@ from agno.media import Image as AgnoImage
 from agents.medical_agent import agent
 from PIL import Image as PILImage
 from config import config
+import datetime
 
 
 # Set page config
@@ -188,3 +189,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Footer
+st.markdown("---")
+st.sidebar.markdown(f"© {datetime.date.today().year} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")

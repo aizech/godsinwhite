@@ -24,3 +24,4 @@ aiofiles
 python-docx
 pypdf
 beautifulsoup4
+pydicom
