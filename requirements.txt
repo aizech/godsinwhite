@@ -21,3 +21,5 @@ streamlit
 urllib3
 sqlalchemy
 aiofiles
+python-docx
+pypdf2
