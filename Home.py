@@ -133,26 +133,49 @@ async def body() -> None:
     ####################################################################
     try:
         logger.info(f"---*--- Loading HALO session ---*---")
-        st.session_state["session_id"] = halo.load_session()
-    except Exception:
-        st.warning("Could not create HALO session, is the database running?")
+        try:
+            st.session_state["session_id"] = halo.load_session()
+        except TypeError as e:
+            # Handle the specific error from agno library
+            if "string indices must be integers, not 'str'" in str(e):
+                # Generate a new session ID as fallback
+                import uuid
+                session_id = str(uuid.uuid4())
+                st.session_state["session_id"] = session_id
+                logger.warning(f"Using fallback session ID due to agno library error: {e}")
+            else:
+                raise
+    except Exception as e:
+        st.warning(f"Could not create HALO session: {str(e)}")
         return
     logger.info(f"---*--- HALO session: {st.session_state.get('session_id')} ---*---")
 
     ####################################################################
     # Load agent runs (i.e. chat history) from memory if messages is not empty
     ####################################################################
-    chat_history = halo.get_messages_for_session()
-    if len(chat_history) > 0:
-        logger.info("Loading messages")
-        # Clear existing messages
-        st.session_state["messages"] = []
-        # Loop through the runs and add the messages to the messages list
-        for message in chat_history:
-            if message.role == "user":
-                await add_message(message.role, str(message.content))
-            if message.role == "assistant":
-                await add_message("assistant", str(message.content), message.tool_calls)
+    try:
+        chat_history = halo.get_messages_for_session()
+        if len(chat_history) > 0:
+            logger.info("Loading messages")
+            # Clear existing messages
+            st.session_state["messages"] = []
+            # Loop through the runs and add the messages to the messages list
+            for message in chat_history:
+                try:
+                    if message.role == "user":
+                        await add_message(message.role, str(message.content))
+                    if message.role == "assistant":
+                        # Check if tool_calls attribute exists
+                        tool_calls = getattr(message, 'tool_calls', None)
+                        await add_message("assistant", str(message.content), tool_calls)
+                except Exception as e:
+                    logger.warning(f"Error processing message: {e}")
+                    continue
+    except Exception as e:
+        logger.warning(f"Failed to load chat history: {e}")
+        # Initialize empty messages list if it doesn't exist
+        if "messages" not in st.session_state:
+            st.session_state["messages"] = []
 
     ####################################################################
     # Get user input
