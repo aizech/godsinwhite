@@ -1,3 +1,5 @@
+<img src="assets/godsinwhite_team.png" alt="" width="400"/>
+
 # GodsinWhite
 
 GodsinWhite is a specialized medical AI platform built on top of the HALO (Hierarchical Agent Learning Orchestrator) framework. It provides a powerful platform for creating, assembling, and orchestrating AI agents specifically designed for medical purposes. Through its modern Streamlit-based interface, GodsinWhite makes advanced medical AI capabilities accessible and useful for healthcare professionals and organizations.
