@@ -278,44 +278,84 @@ def main():
     with tab3:
         st.header("API Keys Configuration")
         
-        # Load existing environment variables
-        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-        if os.path.exists(env_path):
-            dotenv.load_dotenv(env_path)
+        # Check if running on Streamlit Cloud or locally
+        is_cloud = os.environ.get('STREAMLIT_RUNTIME_ENV') == 'cloud'
         
-        # OpenAI API Key
+        # Initialize session state for API keys if not already done
+        if 'api_keys' not in st.session_state:
+            st.session_state.api_keys = {}
+        
         st.subheader("OpenAI API Key")
-        openai_api_key = st.text_input(
-            "Enter your OpenAI API Key",
-            value=os.environ.get("OPENAI_API_KEY", ""),
-            type="password",
-            help="Your OpenAI API key for accessing GPT models"
-        )
         
-        # Save API Keys button
-        if st.button("Save API Keys"):
-            # Create or update .env file
-            env_vars = {}
+        st.write("How you get an [OpenAI API Key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key).")
+                   
+        if is_cloud:
+            # Running on Streamlit Cloud - user needs to provide their own API key
+            st.info("You're running this app online. Please enter your own API key below. "\
+                   "This key will be stored in your session and won't be saved permanently.")
+            
+            # Get API key from session state or empty string as default
+            default_key = st.session_state.api_keys.get('OPENAI_API_KEY', '')
+            
+            # OpenAI API Key input
+            openai_api_key = st.text_input(
+                "Enter your OpenAI API Key",
+                value=default_key,
+                type="password",
+                help="Your OpenAI API key for accessing GPT models"
+            )
+            
+            # Save API key to session state when entered
+            if openai_api_key:
+                st.session_state.api_keys['OPENAI_API_KEY'] = openai_api_key
+                # Update environment variable for current session
+                os.environ["OPENAI_API_KEY"] = openai_api_key
+                if st.button("Apply API Key"):
+                    st.success("API Key applied for this session!")
+            else:
+                st.warning("Please enter your OpenAI API key to use this application.")
+                
+        else:
+            # Running locally - read from .env file
+            st.info("You're running this app locally. API keys will be saved to the .env file.")
+            
+            # Load existing environment variables
+            env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
             if os.path.exists(env_path):
-                # Load existing variables
-                with open(env_path, 'r') as f:
-                    for line in f:
-                        if '=' in line and not line.startswith('#'):
-                            key, value = line.strip().split('=', 1)
-                            env_vars[key] = value
+                dotenv.load_dotenv(env_path)
             
-            # Update with new values
-            env_vars["OPENAI_API_KEY"] = openai_api_key
+            # OpenAI API Key
+            openai_api_key = st.text_input(
+                "Enter your OpenAI API Key",
+                value=os.environ.get("OPENAI_API_KEY", ""),
+                type="password",
+                help="Your OpenAI API key for accessing GPT models"
+            )
             
-            # Write back to .env file
-            with open(env_path, 'w') as f:
-                for key, value in env_vars.items():
-                    f.write(f"{key}={value}\n")
-            
-            # Update current environment
-            os.environ["OPENAI_API_KEY"] = openai_api_key
-            
-            st.success("API Keys saved successfully!")
+            # Save API Keys button
+            if st.button("Save API Keys"):
+                # Create or update .env file
+                env_vars = {}
+                if os.path.exists(env_path):
+                    # Load existing variables
+                    with open(env_path, 'r') as f:
+                        for line in f:
+                            if '=' in line and not line.startswith('#'):
+                                key, value = line.strip().split('=', 1)
+                                env_vars[key] = value
+                
+                # Update with new values
+                env_vars["OPENAI_API_KEY"] = openai_api_key
+                
+                # Write back to .env file
+                with open(env_path, 'w') as f:
+                    for key, value in env_vars.items():
+                        f.write(f"{key}={value}\n")
+                
+                # Update current environment
+                os.environ["OPENAI_API_KEY"] = openai_api_key
+                
+                st.success("API Keys saved successfully to .env file!")
 
 if __name__ == "__main__":
     main()
