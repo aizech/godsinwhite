@@ -388,6 +388,3 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-# Footer
-st.sidebar.markdown(" ")
-st.sidebar.markdown(f"© {config.APP_NAME} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")

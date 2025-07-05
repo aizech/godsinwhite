@@ -305,7 +305,7 @@ gatherUsageStats = false
 
 # The preset Streamlit theme that your custom theme inherits from.
 # One of "light" or "dark".
-# base = 
+#base = "light"
 
 # Primary accent for interactive elements
 #primaryColor = '#F3F3F3'
@@ -331,10 +331,10 @@ gatherUsageStats = false
 #secondaryBackgroundColor="#F2F2F2"
 #textColor="#262730"
 
-#primaryColor = "#6FABAB"        # godsinwhite color
-primaryColor = "#44778d"       # Bertrandt color
+primaryColor = "#6FABAB"        # godsinwhite color
+#primaryColor = "#44778d"       # Bertrandt color
 
-#rimaryColor = "#234A58"               # Akzentfarbe (Buttons, Slider etc.)
+#primaryColor = "#234A58"               # Akzentfarbe (Buttons, Slider etc.)
 #backgroundColor = "#3C5A69"            # Haupt-Hintergrundfarbe
 #secondaryBackgroundColor = "#2a3d47"   # Abgeleitet: dunkleres Blau-Grau
 #textColor = "#FFFFFF"                  # Weißer Text
