@@ -6,6 +6,7 @@ This page provides information about the GodsinWhite Agent Interface.
 import os
 import streamlit as st
 import sys
+import datetime
 
 # Add the parent directory to the path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -80,4 +81,4 @@ st.markdown(f'<div style="height: {height}px;"></div>', unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
-st.sidebar.markdown(f"© {config.APP_NAME} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")
+st.sidebar.markdown(f"© {datetime.date.today().year} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")

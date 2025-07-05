@@ -182,4 +182,4 @@ if __name__ == "__main__":
 
 # Footer
 st.markdown("---")
-st.sidebar.markdown(f"© {config.APP_NAME} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")
+st.sidebar.markdown(f"© {datetime.date.today().year} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")
