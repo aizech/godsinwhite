@@ -27,3 +27,5 @@ beautifulsoup4
 pydicom
 duckdb
 tantivy
+st_paywall
+Authlib

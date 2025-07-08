@@ -6,6 +6,12 @@ GodsinWhite is a specialized medical AI platform built on top of the HALO (Hiera
 
 > We believe that AI should be a tool for everyone, not just a luxury for the wealthy. Our mission is to fundamentally change how medical professionals work by providing them with powerful, accessible AI tools.
 
+
+## Live Demo
+
+Take a look at the [live demo here](https://godsinwhite.streamlit.app/)
+
+
 ## Features
 
 - 🏥 **Medical AI Focus**: Specialized agents and tools designed for healthcare applications
