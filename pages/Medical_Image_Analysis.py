@@ -155,6 +155,10 @@ def main():
                             f"Analyze this medical image considering the following context: {additional_info}"
                             if additional_info
                             else "Analyze this medical image and provide detailed findings."
+                            + "\n\n"
+                            + "If you are not sure about the diagnosis, please provide a possible diagnosis."
+                            + "\n\n"
+                            + "Answer in the language of the user."
                         )
                         response = agent.run(prompt, images=[agno_image])
                         st.markdown("### :material/diagnosis: Analysis Results")
