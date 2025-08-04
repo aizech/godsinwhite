@@ -19,9 +19,9 @@ pages = [
         icon=":material/diagnosis:"
     ),
     st.Page(
-        "pages/Generated_Images.py",
-        title="Generated Images",
-        icon=":material/photo_library:"
+        "pages/Experts_Chat.py",
+        title="Experts Chat",
+        icon=":material/chat:"
     ),
     st.Page(
         "pages/Configuration.py",
