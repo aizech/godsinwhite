@@ -379,7 +379,7 @@ async def example_inputs() -> None:
         if st.button("Medical Imaging Analysis"):
             await add_message(
                 "user",
-                "Analyze the given MRI image and detect any abnormalities: https://github.com/aizech/godsinwhite/demo_data/medical_image_test.dcm",
+                "Analyze the given MRI image and detect any abnormalities: https://github.com/aizech/godsinwhite/tree/main/demo_data/medical_image_test.dcm",
             )
 
         if st.button("Medical Literature Search"):
@@ -397,7 +397,7 @@ async def example_inputs() -> None:
         if st.button("Medical Diagnosis with Medical History"):
             await add_message(
                 "user",
-                "What is the medical diagnosis for this medical history document: https://github.com/aizech/godsinwhite/demo_data/medical_history.txt",
+                "What is the medical diagnosis for this medical history document: https://github.com/aizech/godsinwhite/tree/main/demo_data/medical_history.txt",
             )
 
 async def about():
