@@ -27,11 +27,11 @@ class Config:
 
     MASTER_AGENT_ICON = ASSETS_DIR / "godsinwhite_team.png"
 
-    LOGO_TEXT_PATH = ASSETS_DIR / "godsinwhite_logo_text.png"
-    LOGO_ICON_PATH = ASSETS_DIR / "godsinwhite_logo.png"
-    LOGO_TEAM_PATH = ASSETS_DIR / "godsinwhite_team.png"
+    LOGO_TEXT_PATH = ASSETS_DIR / "godsinwhite_logo_text_light.png"
+    LOGO_ICON_PATH = ASSETS_DIR / "godsinwhite_logo_light.png"
+    LOGO_TEAM_PATH = ASSETS_DIR / "godsinwhite_team_light.png"
 
-    LEAD_AGENT_NAME = "Lead Agent"
+    LEAD_AGENT_NAME = "Chief Doctor"
     TEAM_AGENT_NAME = "Specialists"
 
 # Create a single instance to be imported by other modules

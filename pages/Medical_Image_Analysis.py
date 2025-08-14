@@ -1,6 +1,5 @@
 import os
 import io
-
 import streamlit as st
 import pydicom
 import numpy as np
@@ -14,7 +13,7 @@ import datetime
 # Set page config
 st.set_page_config(
     page_title=f"{config.APP_NAME} - Medical Image Analysis",
-    page_icon="🏥",
+    page_icon="üè•",
     layout="wide",
 )
 
@@ -24,7 +23,6 @@ st.logo(config.LOGO_TEXT_PATH,
     icon_image=config.LOGO_ICON_PATH
 )
 
-
 def main():
     with st.sidebar:
         st.info(
@@ -32,7 +30,7 @@ def main():
             "advanced computer vision and radiological expertise."
         )
         st.warning(
-            "⚠DISCLAIMER: This tool is for show cases and informational purposes only. "
+            "DISCLAIMER: This tool is for show cases and informational purposes only. "
             "All analyses should be reviewed by qualified healthcare professionals. "
             "Do not make medical decisions based solely on this analysis."
         )
@@ -69,7 +67,7 @@ def main():
             with col2:
                 # Check if file is DICOM or regular image
                 file_extension = uploaded_file.name.split('.')[-1].lower()
-                
+
                 if file_extension in ['dicom', 'dcm'] or uploaded_file.type == 'application/dicom':
                     # Handle DICOM files
                     try:
@@ -87,10 +85,11 @@ def main():
                         
                         # Convert numpy array to PIL Image
                         pil_image = PILImage.fromarray(img_array)
-                        
+
                         # If grayscale, convert to RGB for better display
                         if len(img_array.shape) == 2:
                             pil_image = pil_image.convert('RGB')
+
                     except Exception as e:
                         st.error(f"Error processing DICOM file: {str(e)}")
                         st.stop()
@@ -155,8 +154,13 @@ def main():
                             f"Analyze this medical image considering the following context: {additional_info}"
                             if additional_info
                             else "Analyze this medical image and provide detailed findings."
+                            + "\n\n"
+                            + "If you are not sure about the diagnosis, please provide a possible diagnosis."
+                            + "\n\n"
+                            + "Answer in the language of the user."
                         )
-                        response = agent.run(prompt, images=[agno_image])
+                        model = "gpt-5"
+                        response = agent.run(prompt, images=[agno_image], model=model)
                         st.markdown("### :material/diagnosis: Analysis Results")
                         st.markdown("---")
                         if hasattr(response, "content"):
@@ -189,4 +193,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
