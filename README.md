@@ -2,9 +2,27 @@
 
 # GodsinWhite
 
-GodsinWhite is a specialized medical AI platform built on top of the HALO (Hierarchical Agent Learning Orchestrator) framework. It provides a powerful platform for creating, assembling, and orchestrating AI agents specifically designed for medical purposes. Through its modern Streamlit-based interface, GodsinWhite makes advanced medical AI capabilities accessible and useful for healthcare professionals and organizations.
+Gods in White is your personal gateway to advanced medical diagnostics—powered by AI and backed by real medical expertise. Designed for patients, healthcare professionals, and curious minds alike, this app transforms how medical images are analyzed and understood.
 
-> We believe that AI should be a tool for everyone, not just a luxury for the wealthy. Our mission is to fundamentally change how medical professionals work by providing them with powerful, accessible AI tools.
+# Corpus Analytica - Your Trusted Partner in Healthcare
+
+At [Corpus Analytica](https://www.corpusanalytica.com), we redefine how medical professionals and patients connect—through a platform built for simplicity, security, and global reach.
+
+#### What We Offer:
+- Seamless Connections: We unite doctors, specialists, and patients through our cutting-edge digital platform.
+
+- Expert Second Opinions: Gain easy access to a network of certified physicians and specialists for reliable second opinions.
+
+- Effortless Booking: Our intuitive interface makes requesting and scheduling consultations fast and frustration-free.
+
+- Global Access: Wherever you are, our online consultations bring expert medical advice right to your screen.
+
+- Data You Can Trust: We uphold the highest standards in data protection and patient privacy—because your health deserves nothing less.
+
+#### Experience Healthcare in a New Dimension
+Your health is invaluable. With Corpus Analytica, discover a smarter, safer, and more connected way to care.
+
+> *"Healthcare should be accessible, transparent, and empowering. At Corpus Analytica, we're building more than just a platform—we're building trust, one consultation at a time."* — Bernhard Z., Founder of [Corpus Analytica](https://www.corpusanalytica.com)
 
 
 ## Live Demo
