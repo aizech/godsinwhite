@@ -159,7 +159,7 @@ def main():
                             + "\n\n"
                             + "Answer in the language of the user."
                         )
-                        model = "gpt-5"
+                        model = "gpt-4o"
                         response = agent.run(prompt, images=[agno_image], model=model)
                         st.markdown("### :material/diagnosis: Analysis Results")
                         st.markdown("---")
