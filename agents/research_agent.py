@@ -11,12 +11,15 @@ import os
 from agno.agent import Agent
 from agno.knowledge import AgentKnowledge
 from agno.memory.v2 import Memory
-from agno.models.base import Model
-from agno.tools.duckduckgo import DuckDuckGoTools
+from agno.models.openai import OpenAIResponses
+#from agno.tools.duckduckgo import DuckDuckGoTools
+#from agno.tools.pubmed import PubmedTools
+#from agno.tools.openai import OpenAITools
+#from copy import deepcopy
 
 
 def create_research_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: OpenAIResponses, memory: Memory, knowledge: AgentKnowledge
 ) -> Agent:
     """
     Create a research agent that can search for and synthesize information.
@@ -29,19 +32,18 @@ def create_research_agent(
     Returns:
         An Agent instance configured as a research agent
     """
-    # Create a copy of the model to avoid side effects of the model being modified
-    model_copy = deepcopy(model)
-    
+
     return Agent(
         name="Research Agent",
         role="Conduct comprehensive research and produce in-depth reports",
-        model=model_copy,
+        model=OpenAIResponses(id="gpt-5"),
         memory=memory,
         knowledge=knowledge,
         #tools=[ExaTools(num_results=3)],
         # Use DirectWebSearchTool for more reliable web search
-        tools=[DuckDuckGoTools()],
+        #tools=[DuckDuckGoTools()],
         #tools=[Searxng(host="https://search.mdosch.de")],
+        tools=[{"type": "web_search_preview"}],
         description="You are a meticulous research analyst with expertise in synthesizing information from diverse sources. Your goal is to produce balanced, fact-based, and thoroughly documented reports on any topic requested.",
         instructions=[
             "Begin with broad searches to understand the topic landscape before narrowing to specific aspects.",

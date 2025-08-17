@@ -111,7 +111,6 @@ async def selected_model() -> str:
 async def selected_tools() -> List[str]:
     """Display a tool selector in the sidebar using toggle switches with presets."""
     tool_options = {
-        "Web Search (DDG)": "ddg_search",
         "File I/O": "file_tools",
         "Shell Access": "shell_tools",
         #"GPTImage1": "gptimage1",
@@ -185,7 +184,6 @@ async def selected_agents() -> List[str]:
     
     # Define tool options at the top level of the function
     tool_options = {
-        "Web Search (DDG)": "ddg_search",
         "File I/O": "file_tools",
         "Shell Access": "shell_tools",
     }

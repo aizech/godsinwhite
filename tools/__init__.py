@@ -7,7 +7,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agno.tools import Toolkit
-from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.file import FileTools
 from agno.tools.shell import ShellTools
 from .gptimage1 import GPTImage1Tools
@@ -18,9 +17,7 @@ tmp_dir.mkdir(exist_ok=True, parents=True)
 
 
 def get_toolkit(tool_name: str) -> Optional[Toolkit]:
-    if tool_name == "ddg_search":
-        return DuckDuckGoTools()
-    elif tool_name == "file_tools":
+    if tool_name == "file_tools":
         return FileTools(base_dir=cwd)
     elif tool_name == "shell_tools":
         return ShellTools()
