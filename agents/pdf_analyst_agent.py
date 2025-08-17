@@ -9,15 +9,12 @@ from copy import deepcopy
 from agno.agent import Agent
 from agno.knowledge import AgentKnowledge
 from agno.memory.v2 import Memory
-from agno.models.base import Model
-from agno.tools.duckdb import DuckDbTools
-from agno.media import File
 from agno.models.openai.responses import OpenAIResponses
 from agno.utils.media import download_file
 
 
 def create_pdf_analyst_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: OpenAIResponses, memory: Memory, knowledge: AgentKnowledge
 ) -> Agent:
     """
     Create a PDF analyst agent that can analyze PDF files and extract insights.
@@ -50,7 +47,7 @@ def create_pdf_analyst_agent(
     return Agent(
         name="PDF Analyst",
         role="Analyze PDF files and extract meaningful insights",
-        model=model_copy,
+        model=OpenAIResponses(id="gpt-4o"),
         memory=memory,
         knowledge=knowledge,
         tools=[{"type": "file_search"}],

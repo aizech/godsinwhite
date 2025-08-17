@@ -408,6 +408,24 @@ async def main():
 
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# Convert async functions to sync for better Streamlit compatibility
+def sync_main():
+    """Synchronous version of main to avoid event loop conflicts"""
+    # Apply nest_asyncio to handle any remaining async calls
+    nest_asyncio.apply()
+    
+    # Run async functions synchronously
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        loop.run_until_complete(initialize_session_state())
+        loop.run_until_complete(header())
+        loop.run_until_complete(body())
+        loop.run_until_complete(about())
+    finally:
+        loop.close()
+
+# Execute the main function
+sync_main()
 

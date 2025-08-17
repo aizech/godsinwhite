@@ -52,25 +52,10 @@ AGENT_OPTIONS = discover_agents()
 TOOL_OPTIONS = {
     "Web Search": "web_search",
     "File Operations": "file_ops",
-    "Code Execution": "code_exec",
-    "Database Access": "db_access",
-    "MCP Tools": "mcp_tools",
 }
 
 # Preset configurations
 DEFAULT_PRESETS = {
-    "Speed Offering": {
-        "agents": ["project_manager", "task_planner", "resource_manager"],
-        "tools": ["web_search", "file_ops"]
-    },
-    "Data Analysis": {
-        "agents": ["data_analyst", "python_agent"],
-        "tools": ["db_access", "code_exec"]
-    },
-    "Travel Planning": {
-        "agents": ["airbnb", "research_agent"],
-        "tools": ["mcp_tools", "web_search"]
-    },
     "Default": {
         "agents": [],
         "tools": []
@@ -253,6 +238,7 @@ def main():
         model_options = {
             "gpt-4o": "openai:gpt-4o",
             "gpt-4o-mini": "openai:gpt-4o-mini",
+            "gpt-5": "openai:gpt-5"
         }
         
         # Get current default model
@@ -291,7 +277,7 @@ def main():
                    
         if is_cloud:
             # Running on Streamlit Cloud - user needs to provide their own API key
-            st.info("You're running this app online. Please enter your own API key below. "\
+            st.warning("You're running this app online. Please enter your own API key below. "\
                    "This key will be stored in your session and won't be saved permanently.")
             
             # Get API key from session state or empty string as default
@@ -317,7 +303,7 @@ def main():
                 
         else:
             # Running locally - read from .env file
-            st.info("You're running this app locally. API keys will be saved to the .env file.")
+            st.error("You're running this app locally. API keys will be saved to the .env file.")
             
             # Load existing environment variables
             env_path = os.path.join(os.path.dirname(__file__), "..", ".env")

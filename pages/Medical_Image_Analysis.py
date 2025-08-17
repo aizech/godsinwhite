@@ -13,7 +13,7 @@ import datetime
 # Set page config
 st.set_page_config(
     page_title=f"{config.APP_NAME} - Medical Image Analysis",
-    page_icon="üè•",
+    page_icon="🩺",
     layout="wide",
 )
 
@@ -157,9 +157,9 @@ def main():
                             + "\n\n"
                             + "If you are not sure about the diagnosis, please provide a possible diagnosis."
                             + "\n\n"
-                            + "Answer in the language of the user."
+                            + "Answer in the language of the user. If it is not given, answer English."
                         )
-                        model = "gpt-4o"
+                        model = "gpt-5"
                         response = agent.run(prompt, images=[agno_image], model=model)
                         st.markdown("### :material/diagnosis: Analysis Results")
                         st.markdown("---")
