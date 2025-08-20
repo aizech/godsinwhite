@@ -41,7 +41,7 @@ KNOWLEDGE_PATH.mkdir(exist_ok=True, parents=True)
 @dataclass
 class HaloConfig:
     user_id: str
-    model_id: str = "openai:gpt-4o"
+    model_id: str = "openai:gpt-5"
     tools: Optional[List[str]] = None
     agents: Optional[List[str]] = None
 
