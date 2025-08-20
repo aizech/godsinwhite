@@ -321,6 +321,7 @@ def create_halo(
         "Your goal is to coordinate the team to assist the user in the best way possible.",
         "If the user sends a conversational message like 'Hello', 'Hi', 'How are you', 'What is your name', etc., you should respond in a friendly and engaging manner.",
         "If the user asks for something simple, like updating memory, you can do it directly without Thinking and Analyzing.",
+        "If the user says, he loves or likes something or dislikes something, you can update the memory directly without Thinking and Analyzing.",
         "Keep your responses short and to the point, while maintaining a conversational tone.",
         "If the user asks for something complex, **think** and determine if:\n"
         " - You can answer by using a tool available to you\n"

@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from config import config
 from agno.team import Team
 from agno.utils.log import logger
+# TeamRunEvent is not needed as an import - using string constants for event types
+from agno.media import Image
 from halo import HaloConfig, create_halo, halo_memory, show_scotty
 from utils import (
     about,
@@ -22,13 +24,23 @@ from utils import (
     utilities_widget,
 )
 
+load_dotenv(override=True)
+
 # Must precede any llm module imports
 #from langtrace_python_sdk import langtrace
 #from langtrace_python_sdk.utils.with_root_span import with_langtrace_root_span
-
-load_dotenv(override=True)
-
 #langtrace.init()
+
+#from langfuse import get_client
+
+#langfuse = get_client()
+
+# Verify connection
+#if langfuse.auth_check():
+#    print("Langfuse client is authenticated and ready!")
+#else:
+#    print("Authentication failed. Please check your credentials and host.")
+
 
 nest_asyncio.apply()
 st.set_page_config(
@@ -154,23 +166,27 @@ async def body() -> None:
     # Load agent runs (i.e. chat history) from memory if messages is not empty
     ####################################################################
     try:
-        chat_history = halo.get_messages_for_session()
-        if len(chat_history) > 0:
-            logger.info("Loading messages")
-            # Clear existing messages
+        # Initialize messages list if it doesn't exist
+        if "messages" not in st.session_state:
             st.session_state["messages"] = []
-            # Loop through the runs and add the messages to the messages list
-            for message in chat_history:
-                try:
-                    if message.role == "user":
-                        await add_message(message.role, str(message.content))
-                    if message.role == "assistant":
-                        # Check if tool_calls attribute exists
-                        tool_calls = getattr(message, 'tool_calls', None)
-                        await add_message("assistant", str(message.content), tool_calls)
-                except Exception as e:
-                    logger.warning(f"Error processing message: {e}")
-                    continue
+            
+        # Only load chat history if messages list is empty (first load)
+        if len(st.session_state["messages"]) == 0:
+            chat_history = halo.get_messages_for_session()
+            if len(chat_history) > 0:
+                logger.info("Loading chat history from database")
+                # Loop through the runs and add the messages to the messages list
+                for message in chat_history:
+                    try:
+                        if message.role == "user":
+                            await add_message(message.role, str(message.content))
+                        if message.role == "assistant":
+                            # Check if tool_calls attribute exists
+                            tool_calls = getattr(message, 'tool_calls', None)
+                            await add_message("assistant", str(message.content), tool_calls)
+                    except Exception as e:
+                        logger.warning(f"Error processing message: {e}")
+                        continue
     except Exception as e:
         logger.warning(f"Failed to load chat history: {e}")
         # Initialize empty messages list if it doesn't exist
@@ -180,8 +196,76 @@ async def body() -> None:
     ####################################################################
     # Get user input
     ####################################################################
-    if prompt := st.chat_input("✨ How can I help you?"):
-        await add_message("user", prompt)
+    #if prompt := st.chat_input("✨ How can I help you?"):
+    #    await add_message("user", prompt)
+
+    prompt = st.chat_input(
+        "✨ How can I help you?",
+        accept_file=True,
+        file_type=["jpg", "jpeg", "png"]
+    )
+    if prompt:
+        images = []
+        
+        # Check if files are uploaded
+        if hasattr(prompt, 'files') and prompt.files:
+            # Handle file input with optional text
+            import datetime
+            
+            # Create uploads directory if it doesn't exist
+            uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+            os.makedirs(uploads_dir, exist_ok=True)
+            
+            uploaded_filenames = []
+            # Process ALL uploaded files
+            for uploaded_file in prompt.files:
+                # Create unique filename to prevent overwriting
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                file_extension = os.path.splitext(uploaded_file.name)[1]
+                unique_filename = f"{timestamp}_{uploaded_file.name}"
+                file_path = os.path.join(uploads_dir, unique_filename)
+                
+                # Save file to persistent storage
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getvalue())
+                
+                uploaded_filenames.append(uploaded_file.name)
+                
+                # Create Agno Image object for ALL images
+                agno_image = Image(filepath=file_path)
+                images.append(agno_image)
+                
+                # Don't display image here - it will be shown in chat history
+            
+            # Create descriptive text content that references ALL uploaded images
+            base_text = getattr(prompt, 'text', '') or ""
+            if base_text.strip():
+                # User provided text with images
+                if len(uploaded_filenames) == 1:
+                    text_content = f"{base_text} (Analyzing uploaded image: {uploaded_filenames[0]})"
+                else:
+                    text_content = f"{base_text} (Analyzing {len(uploaded_filenames)} uploaded images: {', '.join(uploaded_filenames)})"
+            else:
+                # No text provided, create default message for image analysis
+                if len(uploaded_filenames) == 1:
+                    text_content = f"Please analyze this uploaded image: {uploaded_filenames[0]}"
+                else:
+                    text_content = f"Please analyze these {len(uploaded_filenames)} uploaded images: {', '.join(uploaded_filenames)}"
+            
+            # Store ALL images in session state for this message
+            if "current_images" not in st.session_state:
+                st.session_state["current_images"] = []
+            st.session_state["current_images"] = images
+            
+            await add_message("user", text_content, images=images)
+            
+        elif hasattr(prompt, 'text') and prompt.text:
+            # Handle text-only input
+            await add_message("user", prompt.text)
+        elif isinstance(prompt, str):
+            # Fallback for simple string input
+            await add_message("user", prompt)
+    
 
     ####################################################################
     # Show example inputs
@@ -206,7 +290,9 @@ async def body() -> None:
             _content = message["content"]
             #if _content is not None:
             # Skip messages with None or empty content
-            if _content is not None and _content.strip() != "" and _content.strip().lower() != "none":
+            # Handle both string content and ChatInputValue objects
+            content_str = str(_content) if _content is not None else ""
+            if content_str and content_str.strip() != "" and content_str.strip().lower() != "none":
                 with st.chat_message(message["role"], avatar=avatar):
                         # Generate a unique key for this message based on its content and role
                     message_key = f"{message['role']}_{hash(message['content'])}"
@@ -226,21 +312,69 @@ async def body() -> None:
                     # Check for image links in the content
                     import re
                     import os
-                    from PIL import Image
+                    from PIL import Image as PILImage
                     
                     # Display the message content
-                    st.markdown(_content)
+                    st.markdown(content_str)
                     
-                    # Check for sandbox image links
+                    # Display uploaded images if they exist in the message (50% size)
+                    if "images" in message and message["images"]:
+                        st.write("**Uploaded Images:**")
+                        # Create two columns for 50% width display
+                        col1, col2 = st.columns([1, 1])
+                        for idx, image in enumerate(message["images"]):
+                            # Alternate between columns for multiple images
+                            current_col = col1 if idx % 2 == 0 else col2
+                            with current_col:
+                                try:
+                                    # Display image from filepath at 50% size
+                                    if hasattr(image, 'filepath') and image.filepath:
+                                        st.image(str(image.filepath), caption=f"Image {idx+1}", width=None)
+                                    elif hasattr(image, 'url') and image.url:
+                                        st.image(image.url, caption=f"Image {idx+1}", width=None)
+                                except Exception as e:
+                                    st.error(f"Error displaying image {idx+1}: {e}")
+                    
+                    # Check for sandbox image links (UUID-style filenames that might be referenced incorrectly)
+                    # These are typically UUID filenames that should be in generated_images directory
                     sandbox_pattern = r'\[.*?\]\(sandbox:/mnt/data/([a-f0-9\-]+\.(?:png|jpg|jpeg|gif))\)'
-                    sandbox_matches = re.findall(sandbox_pattern, _content)
+                    sandbox_matches = re.findall(sandbox_pattern, content_str)
+                    
+                    # Check for generated_images directory links
+                    generated_pattern = r'\[.*?\]\(generated_images/([^)]+\.(?:png|jpg|jpeg|gif))\)'
+                    generated_matches = re.findall(generated_pattern, content_str)
                     
                     # Check for local file image links
                     file_pattern = r'\[.*?\]\(file:///(.*?\.(?:png|jpg|jpeg|gif))\)'
-                    file_matches = re.findall(file_pattern, _content)
+                    file_matches = re.findall(file_pattern, content_str)
                     
-                    # Display sandbox images if found
+                    # Check for dashboard_charts and other chart directory links
+                    chart_pattern = r'\[.*?\]\((dashboard_charts|business_charts|charts)/([^)]+\.(?:png|jpg|jpeg|gif))\)'
+                    chart_matches = re.findall(chart_pattern, content_str)
+                    
+                    # Check for relative path image links (./path/image.png)
+                    relative_pattern = r'\[.*?\]\(\.?/?([^)]*\.(?:png|jpg|jpeg|gif))\)'
+                    relative_matches = re.findall(relative_pattern, content_str)
+                    
+                    # Display sandbox images if found (map sandbox references to generated_images directory)
                     for img_filename in sandbox_matches:
+                        # Map sandbox references to the actual generated_images directory
+                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
+                        if os.path.exists(img_path):
+                            try:
+                                img = Image.open(img_path)
+                                # Calculate 50% of the container width
+                                col1, col2 = st.columns([1, 1])
+                                with col1:
+                                    st.image(img, caption=f"Generated Image: {img_filename}", use_container_width=True)
+                            except Exception as e:
+                                st.error(f"Error displaying sandbox image: {e}")
+                        else:
+                            # If not found, show a helpful error message
+                            st.warning(f"Image not found: {img_filename}. Please check if the file exists in the generated_images directory.")
+                    
+                    # Display generated_images directory images if found
+                    for img_filename in generated_matches:
                         img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
                         if os.path.exists(img_path):
                             try:
@@ -264,6 +398,40 @@ async def body() -> None:
                             except Exception as e:
                                 st.error(f"Error displaying image: {e}")
                     
+                    # Display chart images from dashboard_charts, business_charts, etc.
+                    for chart_dir, img_filename in chart_matches:
+                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), chart_dir, img_filename)
+                        if os.path.exists(img_path):
+                            try:
+                                img = Image.open(img_path)
+                                # Calculate 50% of the container width
+                                col1, col2 = st.columns([1, 1])
+                                with col1:
+                                    st.image(img, caption=f"Chart: {img_filename}", use_container_width=True)
+                            except Exception as e:
+                                st.error(f"Error displaying chart: {e}")
+                    
+                    # Display relative path images
+                    for img_path in relative_matches:
+                        # Try different base paths
+                        possible_paths = [
+                            os.path.join(os.path.dirname(os.path.abspath(__file__)), img_path),
+                            os.path.join(os.getcwd(), img_path),
+                            img_path  # Try absolute path as-is
+                        ]
+                        
+                        for full_path in possible_paths:
+                            if os.path.exists(full_path):
+                                try:
+                                    img = Image.open(full_path)
+                                    # Calculate 50% of the container width
+                                    col1, col2 = st.columns([1, 1])
+                                    with col1:
+                                        st.image(img, caption=f"Chart: {os.path.basename(full_path)}", use_container_width=True)
+                                    break  # Stop trying other paths once we find the image
+                                except Exception as e:
+                                    continue  # Try next path
+                    
 
     ####################################################################
     # Generate response for user message
@@ -273,115 +441,154 @@ async def body() -> None:
     )
     if last_message and last_message.get("role") == "user":
         user_message = last_message["content"]
+        message_images = last_message.get("images", [])
         logger.info(f"Responding to message: {user_message}")
+        if message_images:
+            logger.info(f"Message includes {len(message_images)} images")
+        
         with st.chat_message("assistant", avatar="🤖"):
             # Create container for tool calls
             tool_calls_container = st.empty()
-            resp_container = st.empty()
-            with st.spinner(":material/cognition: Thinking..."):
-                response = ""
-                try:
-                    # Run the agent and stream the response
-                    run_response = await halo.arun(
-                        user_message, stream=True, stream_intermediate_steps=True
-                    )
-                    async for resp_chunk in run_response:
-                        # Display tool calls if available and store them for later use
-                        if hasattr(resp_chunk, 'tools') and resp_chunk.tools and len(resp_chunk.tools) > 0:
-                            # Store the tools in the session state for this response
-                            if "current_tool_calls" not in st.session_state:
-                                st.session_state["current_tool_calls"] = []
-                            # Add new tools to the list, avoiding duplicates
-                            for tool in resp_chunk.tools:
-                                # Get tool identifier (name or id)
-                                tool_id = None
-                                if hasattr(tool, 'get'):
-                                    tool_id = tool.get("name") or tool.get("tool_name")
-                                else:
-                                    tool_id = getattr(tool, "name", None) or getattr(tool, "tool_name", None)
-
-                                # Only add if not already in the list
-                                is_duplicate = False
-                                for t in st.session_state["current_tool_calls"]:
-                                    # Get the name from the existing tool using the appropriate method
-                                    existing_tool_id = None
-                                    if hasattr(t, 'get'):
-                                        existing_tool_id = t.get("name") or t.get("tool_name")
-                                    else:
-                                        existing_tool_id = getattr(t, "name", None) or getattr(t, "tool_name", None)
-                                    
-                                    # Compare with the current tool's ID
-                                    if existing_tool_id == tool_id:
-                                        is_duplicate = True
-                                        break
-                                        
-                                # Add the tool if it's not a duplicate
-                                if tool_id and not is_duplicate:
-                                    st.session_state["current_tool_calls"].append(tool)
-                            
-                            # Display all accumulated tools
-                            display_tool_calls(tool_calls_container, st.session_state["current_tool_calls"])
-
-                        # Display response if available and event is RunResponse
-                        if (
-                            resp_chunk.event == "RunResponse"
-                            and resp_chunk.content is not None
-                        ):
-                            response += resp_chunk.content
-                            resp_container.markdown(response)
-                            
-                            # Check for image links in the streamed response
-                            import re
-                            import os
-                            from PIL import Image
-                            
-                            # Check for sandbox image links
-                            sandbox_pattern = r'\[.*?\]\(sandbox:/mnt/data/([a-f0-9\-]+\.(?:png|jpg|jpeg|gif))\)'
-                            sandbox_matches = re.findall(sandbox_pattern, response)
-                            
-                            # Display sandbox images if found
-                            for img_filename in sandbox_matches:
-                                img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
-                                if os.path.exists(img_path):
-                                    try:
-                                        img = Image.open(img_path)
-                                        # Calculate 50% of the container width
-                                        col1, col2 = st.columns([1, 1])
-                                        with col1:
-                                            st.image(img, caption=f"Generated Image: {img_filename}", use_container_width=True)
-                                    except Exception as e:
-                                        st.error(f"Error displaying image: {e}")
-                            
-
-                    # Add the response to the messages with the accumulated tool calls
-                    message_key = f"assistant_{hash(response)}"
+            
+            response = ""
+            try:
+                # Initialize streaming state
+                if "streaming_response" not in st.session_state:
+                    st.session_state["streaming_response"] = ""
+                if "streaming_active" not in st.session_state:
+                    st.session_state["streaming_active"] = False
+                
+                # Start streaming if not already active
+                if not st.session_state["streaming_active"]:
+                    st.session_state["streaming_active"] = True
+                    st.session_state["streaming_response"] = ""
                     
-                    # Determine which tool calls to use
-                    tool_calls_to_use = None
-                    if "current_tool_calls" in st.session_state and st.session_state["current_tool_calls"]:
-                        # Use the accumulated tool calls from the session state
-                        tool_calls_to_use = st.session_state["current_tool_calls"]
-                        # Store in persistent storage
-                        st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
-                        # Add the message with tool calls
-                        await add_message("assistant", response, tool_calls_to_use)
-                        # Clear the current tool calls for the next response
-                        st.session_state["current_tool_calls"] = []
-                    elif halo.run_response is not None and hasattr(halo.run_response, 'tools') and halo.run_response.tools:
-                        # Fallback to using tools from the run_response
-                        tool_calls_to_use = halo.run_response.tools
-                        # Store in persistent storage
-                        st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
-                        # Add the message with tool calls
-                        await add_message("assistant", response, tool_calls_to_use)
-                    else:
-                        # No tool calls to add
-                        await add_message("assistant", response)
-                except Exception as e:
-                    logger.error(f"Error during agent run: {str(e)}", exc_info=True)
-                    error_message = f"Sorry, I encountered an error: {str(e)}"
-                    await add_message("assistant", error_message)
-                    st.error(error_message)
+                    # Create status indicator
+                    with st.status("Thinking...", expanded=False) as status:
+                        # Run the agent and collect response
+                        if message_images:
+                            # Pass images directly as parameter to arun method
+                            run_response = await halo.arun(
+                                user_message,
+                                images=message_images,
+                                stream=True, 
+                                stream_intermediate_steps=True
+                            )
+                        else:
+                            run_response = await halo.arun(
+                                user_message, stream=True, stream_intermediate_steps=True
+                            )
+                        
+                        status.update(label="Processing...", state="running")
+                        
+                        async for resp_chunk in run_response:
+                            # Handle tool call started events
+                            if resp_chunk.event == "TeamToolCallStarted" and hasattr(resp_chunk, 'tool') and resp_chunk.tool:
+                                if "current_tool_calls" not in st.session_state:
+                                    st.session_state["current_tool_calls"] = []
+                                
+                                tool_id = getattr(resp_chunk.tool, "tool_name", None) or getattr(resp_chunk.tool, "name", None)
+                                is_duplicate = any(
+                                    getattr(t, "tool_name", None) == tool_id or getattr(t, "name", None) == tool_id
+                                    for t in st.session_state["current_tool_calls"]
+                                )
+                                
+                                if tool_id and not is_duplicate:
+                                    st.session_state["current_tool_calls"].append(resp_chunk.tool)
+                                    display_tool_calls(tool_calls_container, st.session_state["current_tool_calls"])
+                            
+                            # Handle tool calls from tools array
+                            elif hasattr(resp_chunk, 'tools') and resp_chunk.tools and len(resp_chunk.tools) > 0:
+                                if "current_tool_calls" not in st.session_state:
+                                    st.session_state["current_tool_calls"] = []
+                                
+                                for tool in resp_chunk.tools:
+                                    tool_id = None
+                                    if hasattr(tool, 'get'):
+                                        tool_id = tool.get("name") or tool.get("tool_name")
+                                    else:
+                                        tool_id = getattr(tool, "name", None) or getattr(tool, "tool_name", None)
+
+                                    is_duplicate = False
+                                    for t in st.session_state["current_tool_calls"]:
+                                        existing_tool_id = None
+                                        if hasattr(t, 'get'):
+                                            existing_tool_id = t.get("name") or t.get("tool_name")
+                                        else:
+                                            existing_tool_id = getattr(t, "name", None) or getattr(t, "tool_name", None)
+                                        
+                                        if existing_tool_id == tool_id:
+                                            is_duplicate = True
+                                            break
+                                            
+                                    if tool_id and not is_duplicate:
+                                        st.session_state["current_tool_calls"].append(tool)
+                                
+                                display_tool_calls(tool_calls_container, st.session_state["current_tool_calls"])
+
+                            # Accumulate response content
+                            if (
+                                resp_chunk.event == "TeamRunResponseContent"
+                                and resp_chunk.content is not None
+                            ):
+                                response += resp_chunk.content
+                                st.session_state["streaming_response"] = response
+                        
+                        status.update(label="Complete", state="complete")
+                    
+                    # Reset streaming state
+                    st.session_state["streaming_active"] = False
+                    
+                    # Get final response from halo if streaming didn't capture it
+                    if not st.session_state["streaming_response"] and halo.run_response:
+                        if hasattr(halo.run_response, 'content') and halo.run_response.content:
+                            st.session_state["streaming_response"] = str(halo.run_response.content)
+                        elif hasattr(halo.run_response, 'response') and halo.run_response.response:
+                            st.session_state["streaming_response"] = str(halo.run_response.response)
+                
+                # Display the accumulated response after status completion
+                if st.session_state["streaming_response"]:
+                    response = st.session_state["streaming_response"]
+                    st.markdown(response)
+                else:
+                    # Fallback: get response directly from halo
+                    if halo.run_response:
+                        if hasattr(halo.run_response, 'content') and halo.run_response.content:
+                            response = str(halo.run_response.content)
+                            st.markdown(response)
+                        elif hasattr(halo.run_response, 'response') and halo.run_response.response:
+                            response = str(halo.run_response.response)
+                            st.markdown(response)
+
+                # Add the response to the messages with the accumulated tool calls
+                message_key = f"assistant_{hash(response)}"
+                
+                # Add the response to the messages with the accumulated tool calls
+                tool_calls_to_use = None
+                if "current_tool_calls" in st.session_state and st.session_state["current_tool_calls"]:
+                    # Use the accumulated tool calls from the session state
+                    tool_calls_to_use = st.session_state["current_tool_calls"]
+                    # Store in persistent storage
+                    st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
+                    # Add the message with tool calls
+                    await add_message("assistant", response, tool_calls_to_use)
+                    # Clear the current tool calls for the next response
+                    st.session_state["current_tool_calls"] = []
+                elif halo.run_response is not None and hasattr(halo.run_response, 'tools') and halo.run_response.tools:
+                    # Fallback to using tools from the run_response
+                    tool_calls_to_use = halo.run_response.tools
+                    # Store in persistent storage
+                    st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
+                    # Add the message with tool calls
+                    await add_message("assistant", response, tool_calls_to_use)
+                else:
+                    # No tool calls to add
+                    await add_message("assistant", response)
+            except Exception as e:
+                logger.error(f"Error during agent run: {str(e)}", exc_info=True)
+                error_message = f"Sorry, I encountered an error: {str(e)}"
+                await add_message("assistant", error_message)
+                st.error(error_message)
 
     ####################################################################
     # Knowledge widget
@@ -399,33 +606,24 @@ async def body() -> None:
     await utilities_widget(halo)
 
 
-async def main():
-    await initialize_session_state()
-    await header()
-    await body()
-    await about()
-    #await show_scotty()
-
-
-
-# Convert async functions to sync for better Streamlit compatibility
-def sync_main():
-    """Synchronous version of main to avoid event loop conflicts"""
-    # Apply nest_asyncio to handle any remaining async calls
-    nest_asyncio.apply()
+def main():
+    """Main function using synchronous Streamlit pattern with streaming fragments"""
+    # Initialize session state synchronously
+    if "halo" not in st.session_state:
+        st.session_state["halo"] = None
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = None
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
     
-    # Run async functions synchronously
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    try:
-        loop.run_until_complete(initialize_session_state())
-        loop.run_until_complete(header())
-        loop.run_until_complete(body())
-        loop.run_until_complete(about())
-    finally:
-        loop.close()
+    # Run header and body synchronously
+    asyncio.run(header())
+    asyncio.run(body())
+    asyncio.run(about())
 
-# Execute the main function
-sync_main()
+# Apply nest_asyncio for compatibility
+nest_asyncio.apply()
+
+# Execute main function
+main()
 

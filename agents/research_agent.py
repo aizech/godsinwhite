@@ -11,7 +11,7 @@ import os
 from agno.agent import Agent
 from agno.knowledge import AgentKnowledge
 from agno.memory.v2 import Memory
-from agno.models.openai import OpenAIResponses
+from agno.models.base import Model
 #from agno.tools.duckduckgo import DuckDuckGoTools
 #from agno.tools.pubmed import PubmedTools
 #from agno.tools.openai import OpenAITools
@@ -19,7 +19,7 @@ from agno.models.openai import OpenAIResponses
 
 
 def create_research_agent(
-    model: OpenAIResponses, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: Memory, knowledge: AgentKnowledge
 ) -> Agent:
     """
     Create a research agent that can search for and synthesize information.
@@ -36,7 +36,7 @@ def create_research_agent(
     return Agent(
         name="Research Agent",
         role="Conduct comprehensive research and produce in-depth reports",
-        model=OpenAIResponses(id="gpt-5"),
+        model=deepcopy(model),
         memory=memory,
         knowledge=knowledge,
         #tools=[ExaTools(num_results=3)],

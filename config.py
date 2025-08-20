@@ -1,10 +1,10 @@
 from pathlib import Path
 
 class Config:
-    COMPANY = "GodsinWhite"
-    COMPANY_URL = "https://www.godsinwhite.com/"
+    COMPANY = "Corpus Analytica"
+    COMPANY_URL = "https://www.corpusanalytica.com/"
 
-    SUPPORT_URL = "https://www.godsinwhite.com/support"
+    SUPPORT_URL = "https://www.corpusanalytica.com/support"
 
     # --- Constants & Directories ---
     APP_NAME      = "GodsinWhite"

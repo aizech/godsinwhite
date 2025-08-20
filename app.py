@@ -2,7 +2,21 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import datetime
+import os
 from config import config
+from dotenv import load_dotenv
+#from langfuse import get_client
+
+load_dotenv(override=True)
+
+#langfuse = get_client()
+
+# Verify connection
+#if langfuse.auth_check():
+#    print("Langfuse client is authenticated and ready!")
+#else:
+#    print("Authentication failed. Please check your credentials and host.")
+
 
 if "init" not in st.session_state:
     st.session_state.init = True
@@ -22,6 +36,11 @@ pages = [
         "pages/Experts_Chat.py",
         title="Experts Chat",
         icon=":material/chat:"
+    ),
+    st.Page(
+        "pages/Generated_Images.py",
+        title="Generated Images",
+        icon=":material/photo_library:"
     ),
     st.Page(
         "pages/Configuration.py",

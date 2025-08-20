@@ -29,3 +29,5 @@ duckdb
 tantivy
 st_paywall
 Authlib
+matplotlib
+langfuse
