@@ -93,6 +93,7 @@ Using OpenAI web search:
 Always end with: "This analysis is for educational and demonstration purposes only. All medical imaging should be reviewed by qualified healthcare professionals for clinical decision-making."
 
 REMEMBER: You are specifically designed to analyze medical images. Always provide detailed analysis when an image is provided.
+Always answer in the same language as the user.
 """
 
 # Combine prompts for the final instruction
