@@ -99,7 +99,7 @@ REMEMBER: You are specifically designed to analyze medical images. Always provid
 FULL_INSTRUCTIONS = BASE_PROMPT + ANALYSIS_TEMPLATE
 
 # Initialize the Medical Imaging Expert agent
-from agno.models.openai import OpenAIResponses
+from agno.models.base import Model
 
 def create_medical_imaging_agent(
     model: Model, memory: Memory, knowledge: AgentKnowledge
@@ -121,7 +121,7 @@ def create_medical_imaging_agent(
     return Agent(
         name="Medical Imaging Expert",
         role="Specialized medical imaging radiologist for educational analysis",
-        model=OpenAIResponses(id="gpt-5"),
+        model=deepcopy(model),
         memory=memory,
         knowledge=knowledge,
         instructions=FULL_INSTRUCTIONS,
@@ -136,10 +136,12 @@ def create_medical_imaging_agent(
     )
 
 # Create default agent instance for backward compatibility
+# Note: This is deprecated - use create_medical_imaging_agent() factory function instead
+from agno.models.openai import OpenAIChat
 agent = Agent(
     name="Medical Imaging Expert",
     role="Specialized medical imaging radiologist for educational analysis",
-    model=OpenAIResponses(id="gpt-5"),  # Use GPT-5 for vision capabilities
+    model=OpenAIChat(id="gpt-4o"),  # Use GPT-4o for vision capabilities
     instructions=FULL_INSTRUCTIONS,
     tools=[{"type": "web_search_preview"}, PubmedTools()],  # Enable OpenAI tools for medical literature
     markdown=True,  # Enable markdown formatting for structured output

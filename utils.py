@@ -35,6 +35,7 @@ async def add_message(
     content: str,
     tool_calls: Optional[List[Dict[str, Any]]] = None,
     intermediate_steps_displayed: bool = False,
+    images: Optional[List[Any]] = None,
 ) -> None:
     """Safely add a message to the session state"""
     if role == "user":
@@ -73,15 +74,20 @@ async def add_message(
                     # Last resort fallback
                     preserved_tool_calls.append({"name": "Unknown Tool"})
     
-    # Add the message with preserved tool calls to the session state
-    st.session_state["messages"].append(
-        {
-            "role": role,
-            "content": content,
-            "tool_calls": preserved_tool_calls,
-            "intermediate_steps_displayed": intermediate_steps_displayed,
-        }
-    )
+    # Add the message with preserved tool calls and images to the session state
+    message_data = {
+        "role": role,
+        "content": content,
+        "tool_calls": preserved_tool_calls,
+        "intermediate_steps_displayed": intermediate_steps_displayed,
+    }
+    
+    # Add images if provided
+    if images:
+        message_data["images"] = images
+        logger.info(f"Added {len(images)} images to message")
+    
+    st.session_state["messages"].append(message_data)
 
 
 async def selected_model() -> str:
@@ -301,8 +307,13 @@ async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
         user_memories = halo_memory.get_user_memories(user_id=user_id)
         with st.expander(f"💭 Memories for {user_id}", expanded=False):
             if len(user_memories) > 0:
-                # Create a dataframe from the memories
+                # Initialize session state for memory selection
+                if "selected_memories" not in st.session_state:
+                    st.session_state.selected_memories = {}
+                
+                # Create a dataframe from the memories with checkbox column
                 memory_data = {
+                    "Select": [st.session_state.selected_memories.get(i, False) for i in range(len(user_memories))],
                     "Memory": [memory.memory for memory in user_memories],
                     "Topics": [
                         ", ".join(memory.topics) if memory.topics else ""
@@ -316,34 +327,136 @@ async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
                     ],
                 }
 
-                # Display as a table with custom styling
-                st.dataframe(
+                # Display as an editable table with checkbox column
+                edited_data = st.data_editor(
                     memory_data,
                     use_container_width=True,
                     column_config={
-                        "Memory": st.column_config.TextColumn("Memory", width="medium"),
-                        "Topics": st.column_config.TextColumn("Topics", width="small"),
+                        "Select": st.column_config.CheckboxColumn("Select", width="small"),
+                        "Memory": st.column_config.TextColumn("Memory", width="medium", disabled=True),
+                        "Topics": st.column_config.TextColumn("Topics", width="small", disabled=True),
                         "Last Updated": st.column_config.TextColumn(
-                            "Last Updated", width="small"
+                            "Last Updated", width="small", disabled=True
                         ),
                     },
                     hide_index=True,
+                    key="memory_editor"
                 )
+                
+                # Update session state with checkbox selections
+                for i, selected in enumerate(edited_data["Select"]):
+                    st.session_state.selected_memories[i] = selected
+                
+                # Count selected memories
+                selected_count = sum(edited_data["Select"])
+                
+                # Show selection info
+                if selected_count > 0:
+                    st.info(f"{selected_count} memory/memories selected")
+                
             else:
                 st.info("No memories found, tell me about yourself!")
+                selected_count = 0
 
-            col1, col2 = st.columns([0.5, 0.5])
+            # Button layout - add delete button if memories are selected
+            if len(user_memories) > 0 and selected_count > 0:
+                col1, col2, col3 = st.columns([0.33, 0.33, 0.34])
+            else:
+                col1, col2 = st.columns([0.5, 0.5])
+                col3 = None
+            
             with col1:
                 if st.button("Clear all memories", key="clear_all_memories"):
                     await add_message("user", "Clear all my memories")
                     if "memory_refresh_count" not in st.session_state:
                         st.session_state.memory_refresh_count = 0
                     st.session_state.memory_refresh_count += 1
+            
             with col2:
                 if st.button("Refresh memories", key="refresh_memories"):
                     if "memory_refresh_count" not in st.session_state:
                         st.session_state.memory_refresh_count = 0
                     st.session_state.memory_refresh_count += 1
+            
+            # Delete selected memories button
+            if col3 is not None:
+                with col3:
+                    # Create two sub-columns for the delete buttons
+                    subcol1, subcol2 = st.columns([0.5, 0.5])
+                    with subcol2:
+                        st.markdown(" ")
+                    
+                    #with subcol1:
+                    #    if st.button(f"Forget ({selected_count})", key="delete_selected_memories", type="secondary", help="Send delete request to HALO"):
+                    #        # Get selected memory indices
+                    #        selected_indices = [i for i, selected in enumerate(edited_data["Select"]) if selected]
+                    #        
+                    #        if selected_indices:
+                    #            # Create delete message with selected memories
+                    #            selected_memories_text = []
+                    #            for idx in selected_indices:
+                    #                if idx < len(user_memories):
+                    #                    memory_preview = user_memories[idx].memory[:100] + "..." if len(user_memories[idx].memory) > 100 else user_memories[idx].memory
+                    #                    selected_memories_text.append(f"- {memory_preview}")
+                    #            
+                    #            delete_message = f"Update the following memories, that the user dislikes them:\n" + "\n".join(selected_memories_text)
+                    #            await add_message("user", delete_message)
+                    #            
+                    #            # Clear selection state
+                    #            st.session_state.selected_memories = {}
+                    #            
+                    #            # Trigger refresh
+                    #            if "memory_refresh_count" not in st.session_state:
+                    #                st.session_state.memory_refresh_count = 0
+                    #            st.session_state.memory_refresh_count += 1
+                    
+                    with subcol2:
+                        if st.button(f"Erase ({selected_count})", key="erase_selected_memories", type="primary", help="Directly erase from memory"):
+                            # Get selected memory indices
+                            selected_indices = [i for i, selected in enumerate(edited_data["Select"]) if selected]
+                            
+                            if selected_indices:
+                                # Directly delete memories from halo_memory using their IDs
+                                deleted_count = 0
+                                failed_deletions = []
+                                
+                                for idx in selected_indices:
+                                    if idx < len(user_memories):
+                                        try:
+                                            memory_to_delete = user_memories[idx]
+                                            # Use the memory_id to delete directly from halo_memory
+                                            if memory_to_delete.memory_id:
+                                                halo_memory.delete_user_memory(
+                                                    memory_id=memory_to_delete.memory_id,
+                                                    user_id=user_id,
+                                                    refresh_from_db=False  # We'll refresh once at the end
+                                                )
+                                                deleted_count += 1
+                                            else:
+                                                logger.warning(f"Memory at index {idx} has no memory_id")
+                                                failed_deletions.append(f"Memory {idx + 1} (no ID)")
+                                        except Exception as e:
+                                            memory_id = getattr(memory_to_delete, 'memory_id', 'unknown')
+                                            logger.error(f"Failed to delete memory {memory_id}: {e}")
+                                            failed_deletions.append(f"Memory {idx + 1}")
+                                
+                                # Show results
+                                if deleted_count > 0:
+                                    st.success(f"Successfully erased {deleted_count} memory/memories")
+                                
+                                if failed_deletions:
+                                    st.error(f"Failed to erase: {', '.join(failed_deletions)}")
+                                
+                                # Clear selection state
+                                st.session_state.selected_memories = {}
+                                
+                                # Trigger refresh to reload the memory list
+                                if "memory_refresh_count" not in st.session_state:
+                                    st.session_state.memory_refresh_count = 0
+                                st.session_state.memory_refresh_count += 1
+                                
+                                # Force page refresh to show updated memory list
+                                st.rerun()
 
 
 async def example_inputs() -> None:
@@ -557,7 +670,7 @@ def display_tool_calls(tool_calls_container, tools):
                         member_id = str(member_id).replace("_", " ").title()
                         expander_title = f":material/smart_toy: {member_id}"
                     elif is_memory_task:
-                        expander_title = f"💭 Updating Memory"
+                        expander_title = f":material/network_intelligence_update: Updating Memory"
                     else:
                         # Format the tool name for better readability
                         formatted_tool_name = tool_name_str.replace("_", " ").title()

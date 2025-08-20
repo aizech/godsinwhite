@@ -2,14 +2,17 @@
 # HALO specific files and folders 
 #
 output
-tmp
+tmp*
 sandbox
 generated_images
 knowledge_docs
 downloads
+uploads
 archive
-.secrets.toml
-
+secrets.toml
+.env
+.devcontainer
+.vscode
 
 
 #
