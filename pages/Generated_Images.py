@@ -15,8 +15,14 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import config
 
-with open("styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# Page config
+st.set_page_config(
+    page_title=f"{config.APP_NAME} - Generated Images Gallery",
+    page_icon=config.APP_ICON,
+    layout="wide",
+    #initial_sidebar_state="collapsed",
+    menu_items=config.MENU_ITEMS
+)
 
 # Logo in sidebar
 st.logo(config.LOGO_TEXT_PATH,
@@ -175,7 +181,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# Footer
-st.markdown("---")
-st.sidebar.markdown(f"© {config.APP_NAME} | Made with :material/favorite: by [{config.COMPANY}]({config.COMPANY_URL})")
