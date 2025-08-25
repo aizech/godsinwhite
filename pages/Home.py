@@ -370,21 +370,48 @@ async def body() -> None:
                         sandbox_matches = re.findall(sandbox_pattern, content_str)
                         log_debug(f"sandbox_matches: {sandbox_matches}")
                         
-                        # Check for generated_images directory links (including file:// protocol)
-                        #generated_pattern = r'(?:\[.*?\]\(|file://.*?[/\\])generated_images[/\\]([^)\s]+\.(?:png|jpg|jpeg|gif))'
-                        generated_pattern = r'(?:\[.*?\]\(|.*?[/\\])generated_images[/\\]([^)\s]+\.(?:png|jpg|jpeg|gif))'
-                        generated_matches = re.findall(generated_pattern, content_str)
-                        log_debug(f"generated_matches: {generated_matches}")
+                        # Check for dashboard_charts and other chart directory links
+                        chart_pattern = r'\[.*?\]\(.*?(dashboard_charts|business_charts|charts)[/\\]([^)]+)\)'
+                        # search for the chart name and the file extension
+                        #chart_pattern = r'\[.*?\]\(.*?(dashboard_charts|business_charts|charts)[/\\]([^)]+\.(?:png|jpg|jpeg|gif|bmp|webp|svg))\)'
+                        chart_matches = re.findall(chart_pattern, content_str)
+                        log_debug(f"chart_matches: {chart_matches}")
+
+                        for chart_dir, img_filename in chart_matches:
+                            #log_debug(f"img_filename: {img_filename}")
+                            # Search for the image file in the chart directory
+                            chart_dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), chart_dir)
+                            if os.path.exists(chart_dir_path):
+                                # Look for files that match the filename pattern
+                                for file in os.listdir(chart_dir_path):
+                                    if file.startswith(img_filename.split('.')[0]):
+                                        img_path = os.path.join(chart_dir_path, file)
+                                        #log_debug(f"Found matching file: {img_path}")
+                                        break
+                                else:
+                                    # If no matching file found, use the original path
+                                    img_path = os.path.join(chart_dir_path, img_filename)
+                            else:
+                                img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), chart_dir, img_filename)
+
+                            #img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), chart_dir, img_filename)
+                            #img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), chart_dir, img_filename)
+                            log_debug(f"img_path: {img_path}")
+                            if os.path.exists(img_path):
+                                try:
+                                    img = PILImage.open(img_path)
+                                    # Calculate 50% of the container width
+                                    col1, col2 = st.columns([1, 1])
+                                    with col1:
+                                        st.image(img, caption=f"Chart: {img_filename}", use_container_width=True)
+                                        break
+                                except Exception as e:
+                                    st.error(f"Error displaying chart: {e}")
 
                         # Check for local file image links
                         file_pattern = r'\[.*?\]\(file:///(.*?\.(?:png|jpg|jpeg|gif))\)'
                         file_matches = re.findall(file_pattern, content_str)
                         log_debug(f"file_matches: {file_matches}")
-                        
-                        # Check for dashboard_charts and other chart directory links
-                        chart_pattern = r'\[.*?\]\((dashboard_charts|business_charts|charts)/([^)]+\.(?:png|jpg|jpeg|gif))\)'
-                        chart_matches = re.findall(chart_pattern, content_str)
-                        log_debug(f"chart_matches: {chart_matches}")
                         
                         # Check for relative path image links (./path/image.png)
                         relative_pattern = r'\[.*?\]\(\.?/?([^)]*\.(?:png|jpg|jpeg|gif))\)'
@@ -434,20 +461,7 @@ async def body() -> None:
                                     except Exception as e:
                                         continue  # Try next path
 
-                        # Display chart images from dashboard_charts, business_charts, etc.
-                        for chart_dir, img_filename in chart_matches:
-                            #img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), chart_dir, img_filename)
-                            img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), chart_dir, img_filename)
-                            log_debug(f"img_path: {img_path}")
-                            if os.path.exists(img_path):
-                                try:
-                                    img = PILImage.open(img_path)
-                                    # Calculate 50% of the container width
-                                    col1, col2 = st.columns([1, 1])
-                                    with col1:
-                                        st.image(img, caption=f"Chart: {img_filename}", use_container_width=True)
-                                except Exception as e:
-                                    st.error(f"Error displaying chart: {e}")
+                        
 
 
     ####################################################################

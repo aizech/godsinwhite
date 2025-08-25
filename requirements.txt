@@ -1,33 +1,63 @@
-agno
-aiohttp
-certifi
-duckduckgo_search
-httpx
-lancedb
-mcp
-nest_asyncio
-numpy
-openai
-pandas
-Pillow
-primp
-pyarrow
-pydantic
-pydicom
-python-dotenv
-Requests
-rich
-streamlit
-urllib3
-sqlalchemy
-aiofiles
-python-docx
-pypdf
-beautifulsoup4
-pydicom
-duckdb
-tantivy
-st_paywall
-Authlib
-matplotlib
-langfuse
+# Core AI Framework
+agno>=0.1.0
+
+# Web Framework
+streamlit>=1.28.0
+
+# HTTP and Networking
+aiohttp>=3.8.0
+httpx>=0.24.0
+requests>=2.31.0
+urllib3>=2.0.0
+certifi>=2023.7.22
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=12.0.0
+
+# Database and Storage
+lancedb>=0.3.0
+sqlalchemy>=2.0.0
+duckdb>=0.8.0
+tantivy>=0.20.0
+
+# AI and ML
+openai>=1.0.0
+langfuse>=2.0.0
+
+# Image Processing
+Pillow>=10.0.0
+pydicom>=2.4.0
+matplotlib>=3.7.0
+
+# Document Processing
+python-docx>=0.8.11
+pypdf>=3.15.0
+beautifulsoup4>=4.12.0
+
+# Search and Tools
+duckduckgo-search>=3.9.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+rich>=13.0.0
+nest-asyncio>=1.5.0
+aiofiles>=23.0.0
+
+# Authentication and Security
+Authlib>=1.2.0
+
+# Streamlit Extensions
+st-paywall>=0.1.0
+
+# Network optimization
+primp>=0.6.0
+
+# MCP (Model Context Protocol)
+mcp>=1.0.0
+
+ddgs
+#duckduckgo-search
+youtube-transcript-api
