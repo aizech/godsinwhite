@@ -6,6 +6,7 @@ import json
 import base64
 import os.path
 import sys
+import asyncio
 
 from agno.agent import Agent
 from agno.media import ImageArtifact
@@ -60,7 +61,7 @@ class GPTImage1Tools(Toolkit):
         # - Add support for response_format
         # - Add support for saving images
 
-    def create_image(self, agent: Union[Agent, Team], prompt: str) -> str:
+    async def create_image(self, agent: Union[Agent, Team], prompt: str) -> str:
         """Use this function to generate an image for a prompt.
 
         Args:
@@ -108,7 +109,23 @@ class GPTImage1Tools(Toolkit):
                         
                         # Add the image to the agent
                         agent.add_image(image_artifact)
-                        response_str += f"Image has been generated at the URL {img.url}\n"
+                        
+                        # Import add_message function to display image in chat
+                        try:
+                            # Import the add_message function from utils
+                            #import sys
+                            #import os
+                            #parent_dir = os.path.dirname(os.path.dirname(__file__))
+                            #if parent_dir not in sys.path:
+                            #    sys.path.append(parent_dir)
+                            from utils import add_message
+                            
+                            # Add message with image to chat interface
+                            await add_message("assistant", f"I've generated an image based on your request: {prompt}", images=[image_artifact])
+                        except Exception as import_error:
+                            log_debug(f"Could not import add_message: {import_error}")
+                        
+                        response_str += f"Image has been generated successfully and displayed in the chat.\n"
                     # Handle base64-encoded images (typical for gpt-image-1)
                     elif hasattr(img, 'b64_json') and img.b64_json:
                         # Save the base64 image to a temporary file
@@ -143,14 +160,25 @@ class GPTImage1Tools(Toolkit):
                                 revised_prompt=getattr(img, 'revised_prompt', None)
                             )
                             
-                            # Add the image to the agent
-                            agent.add_image(image_artifact)
+                            # Import add_message function to display image in chat
+                            try:
+                                # Import the add_message function from utils
+                                #import sys
+                                #import os
+                                #parent_dir = os.path.dirname(os.path.dirname(__file__))
+                                #if parent_dir not in sys.path:
+                                #    sys.path.append(parent_dir)
+                                from utils import add_message
+                                
+                                # Add message with image to chat interface
+                                await add_message("assistant", f"I've generated an image based on your request: {prompt} \n The image is saved to: {img_path}", images=[image_artifact])
+                            except Exception as import_error:
+                                log_debug(f"Could not import add_message: {import_error}")
                             
-                            # Format the response with both sandbox and file URLs for better compatibility
-                            sandbox_url = f"sandbox:/mnt/data/{img_id}.png"
-                            response_str += f"Image has been generated and saved to {img_path}\n"
-                            response_str += f"The image has been created, capturing {prompt}. "
-                            response_str += f"You can view the image [here]({sandbox_url})."
+                            # Format the response
+                            response_str += f"Image has been generated successfully and displayed in the chat.\n"
+                            response_str += f"The image captures: {prompt}\n"
+                            response_str += f"The image is saved to: {img_path}\n"
                             log_debug(f"Saved base64 image to {img_path}")
                             
                         except Exception as save_error:

@@ -84,8 +84,26 @@ async def add_message(
     
     # Add images if provided
     if images:
-        message_data["images"] = images
-        logger.info(f"Added {len(images)} images to message")
+        # Convert ImageArtifact objects to dictionaries to prevent serialization issues
+        serialized_images = []
+        for img in images:
+            if hasattr(img, 'model_dump'):
+                # This is a Pydantic model (ImageArtifact), serialize it
+                serialized_images.append(img.model_dump(exclude_none=True))
+            elif isinstance(img, dict):
+                # Already a dictionary
+                serialized_images.append(img)
+            else:
+                # Convert other objects to dict representation
+                serialized_images.append({
+                    "id": getattr(img, 'id', None),
+                    "url": getattr(img, 'url', None),
+                    "content": getattr(img, 'content', None),
+                    "mime_type": getattr(img, 'mime_type', 'image/png'),
+                    "alt_text": getattr(img, 'alt_text', ''),
+                })
+        message_data["images"] = serialized_images
+        logger.info(f"Added {len(serialized_images)} images to message")
     
     st.session_state["messages"].append(message_data)
 
@@ -95,6 +113,7 @@ async def selected_model() -> str:
     model_options = {
         "gpt-4o": "openai:gpt-4o",
         "gpt-4o-mini": "openai:gpt-4o-mini",
+        "gpt-5": "openai:gpt-5",
     }
     
     # Load model configuration

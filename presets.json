@@ -14,18 +14,18 @@
       "calculator",
       "data_analyst",
       "research_agent",
-      "gptimage1"
+      "visualizer"
     ],
     "tools": [
       "file_tools",
-      "shell_tools",
-      "gptimage1"
+      "shell_tools"
     ]
   },
   "GodsinWhite": {
     "agents": [
       "medical_imaging",
-      "pubmed"
+      "pubmed",
+      "visualizer"
     ],
     "tools": [
       "web_search"

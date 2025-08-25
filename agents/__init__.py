@@ -24,8 +24,8 @@ for filename in os.listdir(current_dir):
         module_name = filename[:-3]  # Remove .py extension
         
         # Skip commented out modules
-        if module_name == 'crawler_agent':
-            continue
+        #if module_name == 'crawler_agent':
+        #    continue
             
         try:
             # Import the module
