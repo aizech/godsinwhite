@@ -13,6 +13,9 @@ secrets.toml
 .env
 .devcontainer
 .vscode
+dashboard_charts
+business_charts
+charts
 
 
 #
