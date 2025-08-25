@@ -24,8 +24,6 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-# Import GPTImage1Tools - we'll import it inside the function to avoid pickling issues
-# from tools.gptimage1 import GPTImage1Tools
 
 def create_gptimage1_agent(
     model: Model, memory: Memory, knowledge: AgentKnowledge
@@ -43,7 +41,7 @@ def create_gptimage1_agent(
     """
     # Import GPTImage1Tools inside the function to avoid pickling issues
     from tools.gptimage1 import GPTImage1Tools
-    
+
     # Create a copy of the model to avoid side effects of the model being modified
     model_copy = deepcopy(model)
     
@@ -66,7 +64,13 @@ def create_gptimage1_agent(
             3. Use the `create_image` tool with detailed, well-crafted prompts
             4. Provide a brief explanation of the artistic choices made
             5. If the request is unclear, ask for clarification about style preferences
+            6. If the image is generated successfully, it will be saved to the generated_images folder
+            7. Give the user a link to the image in the chat interface
 
             Always aim to create visually striking and meaningful images that capture the user's vision!\
+        """),
+        expected_output=dedent("""\
+            I've generated an image based on your request: {prompt}
+            The image is saved to: {ImageArtifact.url}
         """),
         )

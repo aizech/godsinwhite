@@ -23,7 +23,7 @@ if "init" not in st.session_state:
 
 pages = [
     st.Page(
-        "Home.py",
+        "pages/Home.py",
         title="Home",
         icon=":material/home:"
     ),

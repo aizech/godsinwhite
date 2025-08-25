@@ -27,8 +27,8 @@ from agno.memory.v2 import Memory
 from agno.models.base import Model
 #from agno.tools.searxng import Searxng
 from agno.tools.pubmed import PubmedTools
-from agno.tools.openai import OpenAITools
-from copy import deepcopy
+#from agno.tools.openai import OpenAITools
+#from copy import deepcopy
 
 # Base prompt that defines the agent's expertise and response structure
 BASE_PROMPT = """You are a highly skilled medical imaging expert and radiologist with extensive knowledge in diagnostic imaging. 
@@ -93,6 +93,7 @@ Using OpenAI web search:
 Always end with: "This analysis is for educational and demonstration purposes only. All medical imaging should be reviewed by qualified healthcare professionals for clinical decision-making."
 
 REMEMBER: You are specifically designed to analyze medical images. Always provide detailed analysis when an image is provided.
+Always answer in the same language as the user.
 """
 
 # Combine prompts for the final instruction
@@ -100,6 +101,7 @@ FULL_INSTRUCTIONS = BASE_PROMPT + ANALYSIS_TEMPLATE
 
 # Initialize the Medical Imaging Expert agent
 from agno.models.base import Model
+from agno.models.openai import OpenAIResponses
 
 def create_medical_imaging_agent(
     model: Model, memory: Memory, knowledge: AgentKnowledge
@@ -116,12 +118,12 @@ def create_medical_imaging_agent(
         An Agent instance configured as a medical imaging expert agent
     """
     # Create a copy of the model to avoid side effects of the model being modified
-    model_copy = deepcopy(model)
+    #model_copy = deepcopy(model)
     
     return Agent(
-        name="Medical Imaging Expert",
+        name="Medical Imaging and Search Expert",
         role="Specialized medical imaging radiologist for educational analysis",
-        model=deepcopy(model),
+        model=OpenAIResponses(id="gpt-5"),
         memory=memory,
         knowledge=knowledge,
         instructions=FULL_INSTRUCTIONS,
@@ -137,11 +139,11 @@ def create_medical_imaging_agent(
 
 # Create default agent instance for backward compatibility
 # Note: This is deprecated - use create_medical_imaging_agent() factory function instead
-from agno.models.openai import OpenAIChat
+from agno.models.openai import OpenAIResponses
 agent = Agent(
-    name="Medical Imaging Expert",
+    name="Medical Imaging and Search Expert",
     role="Specialized medical imaging radiologist for educational analysis",
-    model=OpenAIChat(id="gpt-4o"),  # Use GPT-4o for vision capabilities
+    model=OpenAIResponses(id="gpt-5"),  # Use GPT-4o for vision capabilities
     instructions=FULL_INSTRUCTIONS,
     tools=[{"type": "web_search_preview"}, PubmedTools()],  # Enable OpenAI tools for medical literature
     markdown=True,  # Enable markdown formatting for structured output

@@ -23,6 +23,7 @@ from utils import (
     show_user_memories,
     utilities_widget,
 )
+from agno.utils.log import log_debug
 
 load_dotenv(override=True)
 
@@ -206,6 +207,8 @@ async def body() -> None:
     )
     if prompt:
         images = []
+        #images = [r"file://C:\Users\Computer\OneDrive\Desktop\de_giw\godsinwhite\generated_images\0c059aca-7fd2-45e9-be9c-1cae5f6ca688.png"]
+
         
         # Check if files are uploaded
         if hasattr(prompt, 'files') and prompt.files:
@@ -213,7 +216,8 @@ async def body() -> None:
             import datetime
             
             # Create uploads directory if it doesn't exist
-            uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+            uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+            #log_debug(f"uploads_dir: {uploads_dir}")
             os.makedirs(uploads_dir, exist_ok=True)
             
             uploaded_filenames = []
@@ -292,11 +296,15 @@ async def body() -> None:
             # Skip messages with None or empty content
             # Handle both string content and ChatInputValue objects
             content_str = str(_content) if _content is not None else ""
+            #content_str += "Das ist ein Bild: file://C:\\Users\\Computer\\OneDrive\\Desktop\\de_giw\\godsinwhite\\generated_images\\0c059aca-7fd2-45e9-be9c-1cae5f6ca688.png"
+            #log_debug(f"content_str: {content_str}")
+
             if content_str and content_str.strip() != "" and content_str.strip().lower() != "none":
                 with st.chat_message(message["role"], avatar=avatar):
                         # Generate a unique key for this message based on its content and role
                     message_key = f"{message['role']}_{hash(message['content'])}"
-                    
+                    #log_debug(f"message_key: {message_key}")
+
                     # Store tool calls in persistent session state if they exist
                     if "tool_calls" in message and message["tool_calls"]:
                         # Store the tool calls in the persistent storage
@@ -313,125 +321,134 @@ async def body() -> None:
                     import re
                     import os
                     from PIL import Image as PILImage
+                    #from PIL import Image
                     
                     # Display the message content
                     st.markdown(content_str)
-                    
+                    #log_debug(f"content_str: {content_str}")
+
                     # Display uploaded images if they exist in the message (50% size)
                     if "images" in message and message["images"]:
-                        st.write("**Uploaded Images:**")
+                        #st.write("**Uploaded Images:**")
                         # Create two columns for 50% width display
                         col1, col2 = st.columns([1, 1])
                         for idx, image in enumerate(message["images"]):
+                            #log_debug(f"image huu: {image}")
+                            image_filepath = image.get("filepath", image.get("url"))
+                            #st.write(f"image huu: {image_filepath}")
+
                             # Alternate between columns for multiple images
                             current_col = col1 if idx % 2 == 0 else col2
                             with current_col:
                                 try:
+                                    #st.write("**Uploaded Images:**")
+                                    # Check if image is located in the uploads folder
+                                    uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+                                    #log_debug(f"uploads_dir 1: {uploads_dir}")
+                                    image_name = os.path.basename(image_filepath)
+                                    #log_debug(f"image_name 1: {image_name}")
+                                    image_pfad = os.path.join(uploads_dir, image_name)
+                                    #log_debug(f"image_pfad 1: {image_pfad}")
+
+                                    if os.path.isfile(image_pfad):
+                                        st.write("**Uploaded Images:**")
+                                        st.image(image_pfad, caption=f"Image {idx+1}: {image_name}", width=None)
+                                    
                                     # Display image from filepath at 50% size
-                                    if hasattr(image, 'filepath') and image.filepath:
-                                        st.image(str(image.filepath), caption=f"Image {idx+1}", width=None)
-                                    elif hasattr(image, 'url') and image.url:
-                                        st.image(image.url, caption=f"Image {idx+1}", width=None)
+                                    #if hasattr(image, 'filepath') and image.filepath:
+                                    #    st.image(str(image.filepath), caption=f"Image {idx+1}", width=None)
+                                    #elif hasattr(image, 'url') and image.url:
+                                    #    st.write("**Uploaded Images 2:**")
+                                    #    st.image(image.url, caption=f"Image {idx+1}", width=None)
                                 except Exception as e:
                                     st.error(f"Error displaying image {idx+1}: {e}")
-                    
-                    # Check for sandbox image links (UUID-style filenames that might be referenced incorrectly)
-                    # These are typically UUID filenames that should be in generated_images directory
-                    sandbox_pattern = r'\[.*?\]\(sandbox:/mnt/data/([a-f0-9\-]+\.(?:png|jpg|jpeg|gif))\)'
-                    sandbox_matches = re.findall(sandbox_pattern, content_str)
-                    
-                    # Check for generated_images directory links
-                    generated_pattern = r'\[.*?\]\(generated_images/([^)]+\.(?:png|jpg|jpeg|gif))\)'
-                    generated_matches = re.findall(generated_pattern, content_str)
-                    
-                    # Check for local file image links
-                    file_pattern = r'\[.*?\]\(file:///(.*?\.(?:png|jpg|jpeg|gif))\)'
-                    file_matches = re.findall(file_pattern, content_str)
-                    
-                    # Check for dashboard_charts and other chart directory links
-                    chart_pattern = r'\[.*?\]\((dashboard_charts|business_charts|charts)/([^)]+\.(?:png|jpg|jpeg|gif))\)'
-                    chart_matches = re.findall(chart_pattern, content_str)
-                    
-                    # Check for relative path image links (./path/image.png)
-                    relative_pattern = r'\[.*?\]\(\.?/?([^)]*\.(?:png|jpg|jpeg|gif))\)'
-                    relative_matches = re.findall(relative_pattern, content_str)
-                    
-                    # Display sandbox images if found (map sandbox references to generated_images directory)
-                    for img_filename in sandbox_matches:
-                        # Map sandbox references to the actual generated_images directory
-                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
-                        if os.path.exists(img_path):
-                            try:
-                                img = Image.open(img_path)
-                                # Calculate 50% of the container width
-                                col1, col2 = st.columns([1, 1])
-                                with col1:
-                                    st.image(img, caption=f"Generated Image: {img_filename}", use_container_width=True)
-                            except Exception as e:
-                                st.error(f"Error displaying sandbox image: {e}")
-                        else:
-                            # If not found, show a helpful error message
-                            st.warning(f"Image not found: {img_filename}. Please check if the file exists in the generated_images directory.")
-                    
-                    # Display generated_images directory images if found
-                    for img_filename in generated_matches:
-                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
-                        if os.path.exists(img_path):
-                            try:
-                                img = Image.open(img_path)
-                                # Calculate 50% of the container width
-                                col1, col2 = st.columns([1, 1])
-                                with col1:
-                                    st.image(img, caption=f"Generated Image: {img_filename}", use_container_width=True)
-                            except Exception as e:
-                                st.error(f"Error displaying image: {e}")
-                    
-                    # Display local file images if found
-                    for img_path in file_matches:
-                        if os.path.exists(img_path):
-                            try:
-                                img = Image.open(img_path)
-                                # Calculate 50% of the container width
-                                col1, col2 = st.columns([1, 1])
-                                with col1:
-                                    st.image(img, caption=f"Generated Image: {os.path.basename(img_path)}", use_container_width=True)
-                            except Exception as e:
-                                st.error(f"Error displaying image: {e}")
-                    
-                    # Display chart images from dashboard_charts, business_charts, etc.
-                    for chart_dir, img_filename in chart_matches:
-                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), chart_dir, img_filename)
-                        if os.path.exists(img_path):
-                            try:
-                                img = Image.open(img_path)
-                                # Calculate 50% of the container width
-                                col1, col2 = st.columns([1, 1])
-                                with col1:
-                                    st.image(img, caption=f"Chart: {img_filename}", use_container_width=True)
-                            except Exception as e:
-                                st.error(f"Error displaying chart: {e}")
-                    
-                    # Display relative path images
-                    for img_path in relative_matches:
-                        # Try different base paths
-                        possible_paths = [
-                            os.path.join(os.path.dirname(os.path.abspath(__file__)), img_path),
-                            os.path.join(os.getcwd(), img_path),
-                            img_path  # Try absolute path as-is
-                        ]
+                    else:
+
+                        # Check for sandbox image links (UUID-style filenames that might be referenced incorrectly)
+                        # These are typically UUID filenames that should be in generated_images directory
+                        sandbox_pattern = r'\[.*?\]\(sandbox:/mnt/data/([a-f0-9\-]+\.(?:png|jpg|jpeg|gif))\)'
+                        sandbox_matches = re.findall(sandbox_pattern, content_str)
+                        log_debug(f"sandbox_matches: {sandbox_matches}")
                         
-                        for full_path in possible_paths:
-                            if os.path.exists(full_path):
+                        # Check for generated_images directory links (including file:// protocol)
+                        #generated_pattern = r'(?:\[.*?\]\(|file://.*?[/\\])generated_images[/\\]([^)\s]+\.(?:png|jpg|jpeg|gif))'
+                        generated_pattern = r'(?:\[.*?\]\(|.*?[/\\])generated_images[/\\]([^)\s]+\.(?:png|jpg|jpeg|gif))'
+                        generated_matches = re.findall(generated_pattern, content_str)
+                        log_debug(f"generated_matches: {generated_matches}")
+
+                        # Check for local file image links
+                        file_pattern = r'\[.*?\]\(file:///(.*?\.(?:png|jpg|jpeg|gif))\)'
+                        file_matches = re.findall(file_pattern, content_str)
+                        log_debug(f"file_matches: {file_matches}")
+                        
+                        # Check for dashboard_charts and other chart directory links
+                        chart_pattern = r'\[.*?\]\((dashboard_charts|business_charts|charts)/([^)]+\.(?:png|jpg|jpeg|gif))\)'
+                        chart_matches = re.findall(chart_pattern, content_str)
+                        log_debug(f"chart_matches: {chart_matches}")
+                        
+                        # Check for relative path image links (./path/image.png)
+                        relative_pattern = r'\[.*?\]\(\.?/?([^)]*\.(?:png|jpg|jpeg|gif))\)'
+                        relative_matches = re.findall(relative_pattern, content_str)
+                        log_debug(f"relative_matches: {relative_matches}")
+                        
+                        # Display sandbox images if found (map sandbox references to generated_images directory)
+                        #for img_filename in sandbox_matches or generated_matches or file_matches:
+                        #    #log_debug(f"img_filename: {img_filename}")
+                        #    # Map sandbox references to the actual generated_images directory
+                        #    #img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_images", img_filename)
+                        #    img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "generated_images", img_filename)
+                        #    
+                        #    if os.path.exists(img_path):
+                        #        try:
+                        #            #img = Image.open(img_path)
+                        #            img = PILImage.open(img_path)
+                        #            # Calculate 50% of the container width
+                        #            col1, col2 = st.columns([1, 1])
+                        #            with col1:
+                        #                st.image(img, caption=f"Generated Image: {img_filename}", use_container_width=True)
+                        #        except Exception as e:
+                        #            st.error(f"Error displaying sandbox image: {e}")
+                        #    else:
+                        #        # If not found, show a helpful error message
+                        #        st.warning(f"Image not found: {img_filename}. Please check if the file exists in the generated_images directory.")
+
+                        # Display relative path images
+                        for img_filename in relative_matches:
+                            log_debug(f"img_filename: {img_filename}")
+                            # Try different base paths
+                            possible_paths = [
+                                os.path.join(os.path.dirname(os.path.abspath(__file__)), img_filename),
+                                os.path.join(os.getcwd(), img_filename),
+                                img_filename  # Try absolute path as-is
+                            ]
+                            
+                            for full_path in possible_paths:
+                                if os.path.exists(full_path):
+                                    try:
+                                        img = PILImage.open(full_path)
+                                        # Calculate 50% of the container width
+                                        col1, col2 = st.columns([1, 1])
+                                        with col1:
+                                            st.image(img, caption=f"Image: {os.path.basename(full_path)}", use_container_width=True)
+                                            break  # Stop trying other paths once we find the image
+                                    except Exception as e:
+                                        continue  # Try next path
+
+                        # Display chart images from dashboard_charts, business_charts, etc.
+                        for chart_dir, img_filename in chart_matches:
+                            #img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), chart_dir, img_filename)
+                            img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), chart_dir, img_filename)
+                            log_debug(f"img_path: {img_path}")
+                            if os.path.exists(img_path):
                                 try:
-                                    img = Image.open(full_path)
+                                    img = PILImage.open(img_path)
                                     # Calculate 50% of the container width
                                     col1, col2 = st.columns([1, 1])
                                     with col1:
-                                        st.image(img, caption=f"Chart: {os.path.basename(full_path)}", use_container_width=True)
-                                    break  # Stop trying other paths once we find the image
+                                        st.image(img, caption=f"Chart: {img_filename}", use_container_width=True)
                                 except Exception as e:
-                                    continue  # Try next path
-                    
+                                    st.error(f"Error displaying chart: {e}")
+
 
     ####################################################################
     # Generate response for user message
@@ -626,4 +643,3 @@ nest_asyncio.apply()
 
 # Execute main function
 main()
-
