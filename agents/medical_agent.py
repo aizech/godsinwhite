@@ -137,7 +137,8 @@ def create_medical_imaging_agent(
         #show_tool_calls=True,
         exponential_backoff=True,
         #add_datetime_to_instructions=True,
-        add_history_to_messages=True
+        #add_history_to_messages=True,
+        add_history_to_context=True
     )
 
 # Create default agent instance for backward compatibility
