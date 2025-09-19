@@ -1,108 +1,20 @@
-# GodsinWhite - Architecture Decision Records & Product Requirements Document
+# GodsinWhite - Architecture Decision Records
 
 <img src="assets/godsinwhite_team.png" alt="GodsinWhite Team" width="400"/>
 
 ## Table of Contents
 
-1. [Product Requirements Document (PRD)](#product-requirements-document-prd)
-2. [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
-3. [System Architecture](#system-architecture)
-4. [Data Flow Diagrams](#data-flow-diagrams)
-5. [Deployment Architecture](#deployment-architecture)
+1. [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
+2. [System Architecture](#system-architecture)
+3. [Data Flow Diagrams](#data-flow-diagrams)
+4. [Deployment Architecture](#deployment-architecture)
+5. [Implementation Guidelines](#implementation-guidelines)
 
----
+## Overview
 
-## Product Requirements Document (PRD)
+GodsinWhite is an advanced medical AI platform built on the Agno framework that orchestrates specialized AI agents for medical assistance, diagnostics, image analysis, and research. The architecture uses a multi-agent approach with a HALO (HALO Agent Interface) coordinator.
 
-### 1. Product Overview
-
-**Product Name:** GodsinWhite  
-**Company:** Corpus Analytica  
-**Version:** 1.0  
-**Date:** August 2024
-
-#### 1.1 Vision Statement
-GodsinWhite is your personal gateway to advanced medical diagnostics—powered by AI and backed by real medical expertise. We transform how medical images are analyzed and understood through multi-agent AI orchestration.
-
-#### 1.2 Mission Statement
-To democratize access to advanced medical imaging analysis by providing AI-powered diagnostic assistance that bridges the gap between complex medical data and actionable insights for healthcare professionals and patients alike.
-
-### 2. Target Users
-
-#### 2.1 Primary Users
-- **Healthcare Professionals**: Radiologists, physicians, specialists seeking AI-assisted diagnostic support
-- **Medical Students**: Learning medical imaging interpretation and diagnosis
-- **Researchers**: Conducting medical imaging research and analysis
-
-#### 2.2 Secondary Users
-- **Patients**: Seeking educational understanding of their medical images
-- **Healthcare Institutions**: Implementing AI-assisted diagnostic workflows
-
-### 3. Core Features & Requirements
-
-#### 3.1 Functional Requirements
-
-**FR-001: Multi-Agent Medical AI System**
-- System shall orchestrate multiple specialized medical AI agents
-- Each agent shall have specific medical domain expertise
-- Agents shall collaborate to provide comprehensive medical analysis
-
-**FR-002: Medical Image Analysis**
-- System shall analyze X-rays, CT scans, MRI images, ultrasounds
-- System shall support DICOM files and standard image formats
-- System shall provide structured medical reports with confidence levels
-
-**FR-003: Knowledge Base Integration**
-- System shall maintain medical knowledge base with latest research
-- System shall integrate with PubMed for medical literature access
-- System shall provide evidence-based medical references
-
-**FR-004: Session Management**
-- System shall maintain HIPAA-compliant conversation history
-- System shall support multiple concurrent user sessions
-- System shall provide secure data storage and retrieval
-
-**FR-005: Multi-Modal Interface**
-- System shall support text, image, and document inputs
-- System shall provide structured markdown outputs
-- System shall support real-time streaming responses
-
-#### 3.2 Non-Functional Requirements
-
-**NFR-001: Performance**
-- Response time: < 30 seconds for image analysis
-- Concurrent users: Support 100+ simultaneous sessions
-- Uptime: 99.9% availability
-
-**NFR-002: Security & Compliance**
-- HIPAA compliance for medical data handling
-- End-to-end encryption for data transmission
-- Secure API key management
-
-**NFR-003: Scalability**
-- Horizontal scaling capability
-- Cloud-native deployment support
-- Load balancing for high availability
-
-**NFR-004: Usability**
-- Intuitive web-based interface
-- Mobile-responsive design
-- Accessibility compliance (WCAG 2.1)
-
-### 4. Technical Stack
-
-#### 4.1 Core Technologies
-- **Framework**: Agno (Multi-agent AI orchestration)
-- **Frontend**: Streamlit (Python web framework)
-- **AI Models**: OpenAI GPT-4o, Claude, Gemini support
-- **Database**: SQLite (sessions), LanceDB (vector storage)
-- **Storage**: Local file system with cloud backup options
-
-#### 4.2 Integration Points
-- **Medical APIs**: PubMed integration for research
-- **Image Processing**: PIL, PyDICOM for medical imaging
-- **Document Processing**: PDF, DOCX, CSV readers
-- **Authentication**: OAuth2, API key management
+This document outlines the key architectural decisions, system design, and implementation guidelines for the GodsinWhite platform.
 
 ---
 
@@ -249,6 +161,56 @@ Implement comprehensive medical disclaimers and educational-use-only positioning
 #### Consequences
 - **Positive**: Legal protection, ethical deployment, user safety
 - **Negative**: Limited commercial medical applications, user experience friction
+
+---
+
+### ADR-007: Agno Framework Compatibility
+
+**Status:** Accepted  
+**Date:** 2024-09-15  
+**Decision Makers:** Development Team
+
+#### Context
+The application was initially built with an older version of the Agno framework (v2) but needed to be updated to work with the current version, which has significant API changes.
+
+#### Decision
+Refactor the codebase to align with the current Agno framework API, focusing on session management, response streaming, and database access patterns.
+
+#### Rationale
+- **API Evolution**: The Agno framework has evolved with breaking changes
+- **Session Management**: New session handling mechanisms in current Agno version
+- **Streaming Responses**: Changes in async generator patterns for streaming
+- **Database Access**: Storage attribute renamed to db in newer versions
+- **Future Compatibility**: Ensure ongoing compatibility with framework updates
+
+#### Consequences
+- **Positive**: Full compatibility with current Agno framework, improved performance, better error handling
+- **Negative**: Required significant refactoring of session management code, temporary regression in some features
+
+---
+
+### ADR-008: Dark Theme UI Implementation
+
+**Status:** Accepted  
+**Date:** 2024-09-18  
+**Decision Makers:** Development Team, UX Team
+
+#### Context
+The medical application needed a dark theme option to reduce eye strain during extended use and provide a modern, professional appearance aligned with medical software standards.
+
+#### Decision
+Implement a comprehensive dark theme using custom CSS with Streamlit, ensuring consistent styling across all UI elements.
+
+#### Rationale
+- **User Experience**: Reduce eye strain during extended medical analysis sessions
+- **Professional Appearance**: Align with modern medical software design standards
+- **Accessibility**: Improve contrast and readability for various lighting conditions
+- **Consistency**: Ensure uniform appearance across all application components
+- **Theme Switching**: Allow users to select their preferred theme
+
+#### Consequences
+- **Positive**: Improved user experience, professional appearance, better accessibility
+- **Negative**: Additional CSS maintenance overhead, potential Streamlit version compatibility issues
 
 ---
 
@@ -584,16 +546,26 @@ graph TB
 
 ---
 
-## Conclusion
+## Architectural Summary
 
-GodsinWhite represents a sophisticated multi-agent medical AI system designed to provide educational medical imaging analysis. The architecture emphasizes modularity, scalability, and responsible AI deployment in the medical domain.
+The GodsinWhite architecture represents a sophisticated approach to medical AI system design with several key characteristics:
 
-The system's design allows for continuous evolution and improvement while maintaining strict compliance with medical AI best practices and ethical guidelines.
+1. **Multi-Agent Orchestration**: The HALO Agent Interface coordinates specialized medical agents, each with distinct capabilities and expertise areas.
 
-For technical support and contributions, please refer to the main README.md and contributing guidelines.
+2. **Layered Architecture**: Clear separation between frontend, application logic, agent implementation, services, and data storage provides maintainability and flexibility.
+
+3. **Hybrid Storage**: Combination of SQLite for structured data and LanceDB for vector embeddings optimizes for different data access patterns.
+
+4. **Streamlit Integration**: Leverages Streamlit's rapid development capabilities while extending it with custom components and styling.
+
+5. **Agno Framework**: Built on the Agno multi-agent framework with careful attention to version compatibility and API evolution.
+
+6. **Medical Compliance**: Architecture decisions reflect the specialized requirements of medical applications, including disclaimers and ethical considerations.
+
+This architecture provides a solid foundation for continued development and extension of the GodsinWhite platform while maintaining focus on its core medical AI capabilities.
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** August 29, 2024  
-**Next Review:** September 29, 2024
+**Document Version:** 2.0  
+**Last Updated:** September 19, 2025  
+**Next Review:** October 19, 2025
