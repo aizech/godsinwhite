@@ -7,14 +7,14 @@ from pathlib import Path
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.utils.media import download_file
 
 
 def create_pdf_analyst_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a PDF analyst agent that can analyze PDF files and extract insights.

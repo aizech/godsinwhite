@@ -7,14 +7,14 @@ https://docs.agno.com/tools/visualization
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.models.openai import OpenAIChat
 from agno.tools.visualization import VisualizationTools
 
 def create_visualizer_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a Visualizer agent that can create various types of charts and data visualizations.

@@ -7,14 +7,14 @@ https://docs.agno.com/tools/toolkits/others/youtube
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.tools.youtube import YouTubeTools
 
 
 def create_youtube_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a YouTube agent that can obtain the captions of a YouTube video and answer questions.
@@ -35,6 +35,7 @@ def create_youtube_agent(
         role="Obtain the captions of a YouTube video and answer questions.",
         model=model_copy,
         memory=memory,
+        knowledge=knowledge,
         tools=[YouTubeTools()],
         description="You are a YouTube agent. Obtain the captions of a YouTube video and answer questions.",
         instructions=[

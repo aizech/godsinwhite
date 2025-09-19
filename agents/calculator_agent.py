@@ -6,14 +6,14 @@ This module provides a factory function to create a calculator agent.
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.tools.calculator import CalculatorTools
 
 
 def create_calculator_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a calculator agent that can perform mathematical operations.

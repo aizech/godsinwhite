@@ -6,14 +6,14 @@ This module provides a factory function to create a pubmed agent.
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.tools.pubmed import PubmedTools
 
 
 def create_pubmed_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a pubmed agent that can search for and synthesize information.
@@ -34,6 +34,7 @@ def create_pubmed_agent(
         role="You are a medical research assistant AI agent. Your primary responsibility is to answer medical and scientific questions by searching, retrieving, and synthesizing information from the PubMed database. Your responses must be grounded in up-to-date, peer-reviewed scientific literature and should be clear, concise, and suitable for both healthcare professionals and informed laypersons.",
         model=model_copy,
         memory=memory,
+        knowledge=knowledge,
         tools=[PubmedTools()],
         description="You are a medical assistant that will give detailed answers based on real scientific research. For every user question, search PubMed for the most relevant and recent articles. Summarize the findings, cite the sources, and explain the evidence in clear, accessible language. If the evidence is inconclusive or limited, state this clearly. Do not provide personal medical advice or diagnosis.",
         instructions=[

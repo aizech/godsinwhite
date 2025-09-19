@@ -22,8 +22,8 @@ if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 #from agno.tools.searxng import Searxng
 from agno.tools.pubmed import PubmedTools
@@ -104,7 +104,7 @@ from agno.models.base import Model
 from agno.models.openai import OpenAIResponses
 
 def create_medical_imaging_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a medical imaging agent that can analyze various types of medical images.
@@ -131,9 +131,9 @@ def create_medical_imaging_agent(
         description="You are a highly skilled medical imaging expert with extensive knowledge in radiology and diagnostic imaging.",
         markdown=True,  # Enable markdown formatting for structured output
         debug_mode=True,
-        show_tool_calls=True,
+        #show_tool_calls=True,
         exponential_backoff=True,
-        add_datetime_to_instructions=True,
+        #add_datetime_to_instructions=True,
         add_history_to_messages=True
     )
 
@@ -148,9 +148,9 @@ agent = Agent(
     tools=[{"type": "web_search_preview"}, PubmedTools()],  # Enable OpenAI tools for medical literature
     markdown=True,  # Enable markdown formatting for structured output
     debug_mode=True,
-    show_tool_calls=True,
+    #show_tool_calls=True,
     exponential_backoff=True,
-    add_datetime_to_instructions=True
+    #add_datetime_to_instructions=True
 )
 
 # Example usage
