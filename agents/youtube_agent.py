@@ -34,7 +34,11 @@ def create_youtube_agent(
         name="YouTube",
         role="Obtain the captions of a YouTube video and answer questions.",
         model=model_copy,
-        memory=memory,
+        #memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         tools=[YouTubeTools()],
         description="You are a YouTube agent. Obtain the captions of a YouTube video and answer questions.",

@@ -5,8 +5,8 @@ Custom knowledge implementation for the HALO Agent Interface
 from pathlib import Path
 from typing import Iterator, List, Optional
 
-from agno.document import Document
-from agno.document.reader.text_reader import TextReader
+from agno.knowledge.document import Document
+from agno.knowledge.reader.text_reader import TextReader
 from agno.knowledge.knowledge import Knowledge
 from agno.utils.log import logger
 

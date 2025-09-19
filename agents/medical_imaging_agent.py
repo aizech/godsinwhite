@@ -88,13 +88,17 @@ def create_medical_imaging_agent(
         name="Medical Imaging Expert",
         role="Analyze and interpret medical images with professional expertise",
         model=model_copy,
-        memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         tools=[DuckDuckGoTools()],
         description="You are a highly skilled medical imaging expert with extensive knowledge in radiology and diagnostic imaging.",
         instructions=FULL_INSTRUCTIONS,
         markdown=True,  # Enable markdown formatting for structured output
-        add_history_to_messages=True,
+        #add_history_to_messages=True,
+        add_history_to_context=True,
         #add_datetime_to_instructions=True,
         exponential_backoff=True
     )

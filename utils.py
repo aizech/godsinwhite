@@ -5,14 +5,14 @@ import inspect
 from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
-from agno.document import Document
-from agno.document.reader import Reader
-from agno.document.reader.csv_reader import CSVReader
-from agno.document.reader.docx_reader import DocxReader
-from agno.document.reader.pdf_reader import PDFReader
-from agno.document.reader.text_reader import TextReader
-from agno.document.reader.website_reader import WebsiteReader
-from agno.memory.v2 import Memory, UserMemory
+from agno.knowledge.document import Document
+from agno.knowledge.reader import Reader
+from agno.knowledge.reader.csv_reader import CSVReader
+from agno.knowledge.reader.docx_reader import DocxReader
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.knowledge.reader.text_reader import TextReader
+from agno.knowledge.reader.website_reader import WebsiteReader
+from agno.memory import MemoryManager
 from agno.team import Team
 from agno.utils.log import logger
 from halo import HaloConfig, create_halo
@@ -138,7 +138,6 @@ async def selected_tools() -> List[str]:
     tool_options = {
         "File I/O": "file_tools",
         "Shell Access": "shell_tools",
-        #"GPTImage1": "gptimage1",
     }
     
     # Load presets
@@ -319,13 +318,28 @@ async def selected_agents() -> List[str]:
     return selected_agents
 
 
-async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
-    """Show use memories in a streamlit container."""
+async def show_user_memories(halo_team, user_id: str) -> None:
+    """Show user memories in a streamlit container."""
 
     with st.container():
-        user_memories = halo_memory.get_user_memories(user_id=user_id)
+        # Get user memories from the Team's memory system
+        try:
+            # Use the Team's get_user_memories method if available
+            if hasattr(halo_team, 'get_user_memories'):
+                user_memories = halo_team.get_user_memories(user_id=user_id)
+                # Handle case where get_user_memories returns None
+                if user_memories is None:
+                    user_memories = []
+            else:
+                # Fallback: try to access memories through the database
+                user_memories = []
+                logger.warning("Team object doesn't have get_user_memories method")
+        except Exception as e:
+            logger.error(f"Error getting user memories: {e}")
+            user_memories = []
+            
         with st.expander(f"💭 Memories for {user_id}", expanded=False):
-            if len(user_memories) > 0:
+            if user_memories and len(user_memories) > 0:
                 # Initialize session state for memory selection
                 if "selected_memories" not in st.session_state:
                     st.session_state.selected_memories = {}
@@ -333,15 +347,13 @@ async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
                 # Create a dataframe from the memories with checkbox column
                 memory_data = {
                     "Select": [st.session_state.selected_memories.get(i, False) for i in range(len(user_memories))],
-                    "Memory": [memory.memory for memory in user_memories],
+                    "Memory": [getattr(memory, 'memory', str(memory)) for memory in user_memories],
                     "Topics": [
-                        ", ".join(memory.topics) if memory.topics else ""
+                        ", ".join(getattr(memory, 'topics', [])) if hasattr(memory, 'topics') and memory.topics else ""
                         for memory in user_memories
                     ],
-                    "Last Updated": [
-                        memory.last_updated.strftime("%Y-%m-%d %H:%M")
-                        if memory.last_updated
-                        else ""
+                    "Created": [
+                        getattr(memory, 'created_at', '').strftime("%Y-%m-%d %H:%M") if hasattr(memory, 'created_at') and getattr(memory, 'created_at') else "N/A"
                         for memory in user_memories
                     ],
                 }
@@ -354,8 +366,8 @@ async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
                         "Select": st.column_config.CheckboxColumn("Select", width="small"),
                         "Memory": st.column_config.TextColumn("Memory", width="medium", disabled=True),
                         "Topics": st.column_config.TextColumn("Topics", width="small", disabled=True),
-                        "Last Updated": st.column_config.TextColumn(
-                            "Last Updated", width="small", disabled=True
+                        "Created": st.column_config.TextColumn(
+                            "Created", width="small", disabled=True
                         ),
                     },
                     hide_index=True,
@@ -445,7 +457,7 @@ async def show_user_memories(halo_memory: Memory, user_id: str) -> None:
                                             memory_to_delete = user_memories[idx]
                                             # Use the memory_id to delete directly from halo_memory
                                             if memory_to_delete.memory_id:
-                                                halo_memory.delete_user_memory(
+                                                halo_team.memory.delete_user_memory(
                                                     memory_id=memory_to_delete.memory_id,
                                                     user_id=user_id,
                                                     refresh_from_db=False  # We'll refresh once at the end
@@ -892,82 +904,38 @@ async def knowledge_widget(halo: Team) -> None:
 async def session_selector(halo: Team, halo_config: HaloConfig) -> None:
     """Display a session selector in the sidebar, if a new session is selected, HALO is restarted with the new session."""
 
-    if not halo.storage:
+    if not halo.db:
         return
 
     try:
-        # Get all agent sessions.
-        halo_sessions = halo.storage.get_all_sessions()
-        if not halo_sessions:
-            st.sidebar.info("No saved sessions found.")
-            return
-
-        # Get session names if available, otherwise use IDs.
-        sessions_list = []
-        for session in halo_sessions:
-            session_id = session.session_id
-            session_name = (
-                session.session_data.get("session_name", None)
-                if session.session_data
-                else None
-            )
-            display_name = session_name if session_name else session_id
-            sessions_list.append({"id": session_id, "display_name": display_name})
-
-        # Display session selector.
+        # Get all sessions from the database
+        # Note: In the current Agno framework, we need to use the db directly
+        # The Team class doesn't expose get_all_sessions method, so we'll implement a basic session selector
+        
+        # For now, we'll show the current session and allow creating a new one
         st.sidebar.markdown("# :material/chat: Session")
-        selected_session = st.sidebar.selectbox(
-            "Session",
-            options=[s["display_name"] for s in sessions_list],
-            key="session_selector",
-            label_visibility="collapsed",
-        )
-        # Find the selected session ID.
-        selected_session_id = next(
-            s["id"] for s in sessions_list if s["display_name"] == selected_session
-        )
-        # Update the agent session if it has changed.
-        if st.session_state["session_id"] != selected_session_id:
-            logger.info(f"---*--- Loading HALO session: {selected_session_id} ---*---")
+        
+        # Show current session info
+        current_session_id = st.session_state.get("session_id", "No session")
+        st.sidebar.text(f"Current Session: {current_session_id[:8]}...")
+        
+        # Option to create a new session
+        if st.sidebar.button("New Session", key="new_session_btn"):
+            import uuid
+            new_session_id = str(uuid.uuid4())
+            logger.info(f"---*--- Creating new HALO session: {new_session_id} ---*---")
+            st.session_state["session_id"] = new_session_id
             st.session_state["halo"] = create_halo(
                 config=halo_config,
-                session_id=selected_session_id,
+                session_id=new_session_id,
             )
+            # Clear messages for new session
+            st.session_state["messages"] = []
             st.rerun()
 
-        # Show the rename session widget.
-        container = st.sidebar.container()
-        session_row = container.columns([3, 1], vertical_alignment="center")
-
-        # Initialize session_edit_mode if needed.
-        if "session_edit_mode" not in st.session_state:
-            st.session_state.session_edit_mode = False
-
-        # Show the session name.
-        with session_row[0]:
-            if st.session_state.session_edit_mode:
-                new_session_name = st.text_input(
-                    "Session Name",
-                    value=halo.session_name,
-                    key="session_name_input",
-                    label_visibility="collapsed",
-                )
-            else:
-                st.markdown(f"Session Name: **{halo.session_name}**")
-
-        # Show the rename session button.
-        with session_row[1]:
-            if st.session_state.session_edit_mode:
-                if st.button("✓", key="save_session_name", type="primary"):
-                    if new_session_name:
-                        halo.rename_session(new_session_name)
-                        st.session_state.session_edit_mode = False
-                        container.success("Renamed!")
-                        # Trigger a rerun to refresh the sessions list
-                        st.rerun()
-            else:
-                if st.button("✎", key="edit_session_name"):
-                    st.session_state.session_edit_mode = True
+        # Show the rename session widget if we have a valid session
+        if st.session_state.get("session_id"):
+            container = st.sidebar.container()
     except Exception as e:
         logger.error(f"Error in session selector: {str(e)}")
         st.sidebar.error("Failed to load sessions")

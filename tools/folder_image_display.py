@@ -5,7 +5,7 @@ from pathlib import Path
 import asyncio
 
 from agno.agent import Agent
-from agno.media import ImageArtifact
+from agno.media import Image
 from agno.team.team import Team
 from agno.tools import Toolkit
 from agno.utils.log import log_debug, logger
@@ -88,7 +88,7 @@ class FolderImageDisplayTools(Toolkit):
                     abs_path = os.path.abspath(img_path).replace("\\", "/")
                     file_url = f"file:///{abs_path}"
                     
-                    image_artifact = ImageArtifact(
+                    image_artifact = Image(
                         id=f"folder_img_{img_name}",
                         url=file_url,
                         content=None,  # Don't load binary content to avoid serialization issues

@@ -191,7 +191,7 @@ async def body() -> None:
     ####################################################################
     # Show user memories
     ####################################################################
-    await show_user_memories(halo_memory, user_id)
+    await show_user_memories(halo, user_id)
 
     ####################################################################
     # Display agent messages
@@ -410,4 +410,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

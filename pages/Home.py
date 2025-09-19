@@ -116,6 +116,24 @@ async def body() -> None:
     agents = await selected_agents()
 
     ####################################################################
+    # Generate or retrieve session ID
+    ####################################################################
+    try:
+        logger.info(f"---*--- Managing HALO session ---*---")
+        # Generate session ID if not already present
+        if "session_id" not in st.session_state or st.session_state["session_id"] is None:
+            import uuid
+            session_id = str(uuid.uuid4())
+            st.session_state["session_id"] = session_id
+            logger.info(f"Generated new session ID: {session_id}")
+        else:
+            session_id = st.session_state["session_id"]
+            logger.info(f"Using existing session ID: {session_id}")
+    except Exception as e:
+        st.warning(f"Could not manage HALO session: {str(e)}")
+        return
+    
+    ####################################################################
     # Create HALO
     ####################################################################
     halo_config = HaloConfig(
@@ -133,7 +151,7 @@ async def body() -> None:
     halo: Team
     if recreate_halo:
         logger.info("---*--- Creating HALO instance ---*---")
-        halo = create_halo(halo_config)
+        halo = create_halo(halo_config, session_id=session_id)
         st.session_state["halo"] = halo
         st.session_state["halo_config"] = halo_config
         logger.info(f"---*--- HALO instance created ---*---")
@@ -141,26 +159,6 @@ async def body() -> None:
         halo = st.session_state["halo"]
         logger.info(f"---*--- HALO instance exists ---*---")
 
-    ####################################################################
-    # Load Agent Session from the database
-    ####################################################################
-    try:
-        logger.info(f"---*--- Loading HALO session ---*---")
-        try:
-            st.session_state["session_id"] = halo.load_session()
-        except TypeError as e:
-            # Handle the specific error from agno library
-            if "string indices must be integers, not 'str'" in str(e):
-                # Generate a new session ID as fallback
-                import uuid
-                session_id = str(uuid.uuid4())
-                st.session_state["session_id"] = session_id
-                logger.warning(f"Using fallback session ID due to agno library error: {e}")
-            else:
-                raise
-    except Exception as e:
-        st.warning(f"Could not create HALO session: {str(e)}")
-        return
     logger.info(f"---*--- HALO session: {st.session_state.get('session_id')} ---*---")
 
     ####################################################################
@@ -279,7 +277,7 @@ async def body() -> None:
     ####################################################################
     # Show user memories
     ####################################################################
-    await show_user_memories(halo_memory, user_id)
+    await show_user_memories(halo, user_id)
 
     ####################################################################
     # Display agent messages
@@ -499,20 +497,24 @@ async def body() -> None:
                         # Run the agent and collect response
                         if message_images:
                             # Pass images directly as parameter to arun method
-                            run_response = await halo.arun(
+                            run_response = halo.arun(
                                 user_message,
                                 images=message_images,
                                 stream=True, 
                                 stream_intermediate_steps=True
                             )
                         else:
-                            run_response = await halo.arun(
+                            run_response = halo.arun(
                                 user_message, stream=True, stream_intermediate_steps=True
                             )
                         
                         status.update(label="Processing...", state="running")
                         
                         async for resp_chunk in run_response:
+                            # Debug: Log all events to understand what's happening
+                            if hasattr(resp_chunk, 'event'):
+                                logger.debug(f"Received event: {resp_chunk.event}")
+                            
                             # Handle tool call started events
                             if resp_chunk.event == "TeamToolCallStarted" and hasattr(resp_chunk, 'tool') and resp_chunk.tool:
                                 if "current_tool_calls" not in st.session_state:
@@ -557,64 +559,53 @@ async def body() -> None:
                                 
                                 display_tool_calls(tool_calls_container, st.session_state["current_tool_calls"])
 
-                            # Accumulate response content
+                            # Accumulate response content - try multiple event types
                             if (
-                                resp_chunk.event == "TeamRunResponseContent"
+                                (resp_chunk.event == "TeamRunResponseContent" or 
+                                 resp_chunk.event == "TeamRunContent" or
+                                 resp_chunk.event == "run_content" or
+                                 resp_chunk.event == "content")
                                 and resp_chunk.content is not None
                             ):
                                 response += resp_chunk.content
                                 st.session_state["streaming_response"] = response
-                        
-                        status.update(label="Complete", state="complete")
+                                logger.debug(f"Accumulated response length: {len(response)}")
+                            
+                            # Also check if there's a response attribute directly
+                            elif hasattr(resp_chunk, 'response') and resp_chunk.response is not None:
+                                response += str(resp_chunk.response)
+                                st.session_state["streaming_response"] = response
+                                logger.debug(f"Accumulated response from response attr: {len(response)}")
                     
                     # Reset streaming state
                     st.session_state["streaming_active"] = False
                     
-                    # Get final response from halo if streaming didn't capture it
-                    if not st.session_state["streaming_response"] and halo.run_response:
-                        if hasattr(halo.run_response, 'content') and halo.run_response.content:
-                            st.session_state["streaming_response"] = str(halo.run_response.content)
-                        elif hasattr(halo.run_response, 'response') and halo.run_response.response:
-                            st.session_state["streaming_response"] = str(halo.run_response.response)
-                
-                # Display the accumulated response after status completion
-                if st.session_state["streaming_response"]:
-                    response = st.session_state["streaming_response"]
-                    st.markdown(response)
-                else:
-                    # Fallback: get response directly from halo
-                    if halo.run_response:
-                        if hasattr(halo.run_response, 'content') and halo.run_response.content:
-                            response = str(halo.run_response.content)
-                            st.markdown(response)
-                        elif hasattr(halo.run_response, 'response') and halo.run_response.response:
-                            response = str(halo.run_response.response)
-                            st.markdown(response)
+                    # Display the accumulated response after status completion
+                    if st.session_state["streaming_response"]:
+                        response = st.session_state["streaming_response"]
+                        st.markdown(response)
+                    else:
+                        # If no response was captured through streaming, show a message
+                        response = "No response received from the agent."
+                        st.markdown(response)
 
-                # Add the response to the messages with the accumulated tool calls
-                message_key = f"assistant_{hash(response)}"
-                
-                # Add the response to the messages with the accumulated tool calls
-                tool_calls_to_use = None
-                if "current_tool_calls" in st.session_state and st.session_state["current_tool_calls"]:
-                    # Use the accumulated tool calls from the session state
-                    tool_calls_to_use = st.session_state["current_tool_calls"]
-                    # Store in persistent storage
-                    st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
-                    # Add the message with tool calls
-                    await add_message("assistant", response, tool_calls_to_use)
-                    # Clear the current tool calls for the next response
-                    st.session_state["current_tool_calls"] = []
-                elif halo.run_response is not None and hasattr(halo.run_response, 'tools') and halo.run_response.tools:
-                    # Fallback to using tools from the run_response
-                    tool_calls_to_use = halo.run_response.tools
-                    # Store in persistent storage
-                    st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
-                    # Add the message with tool calls
-                    await add_message("assistant", response, tool_calls_to_use)
-                else:
-                    # No tool calls to add
-                    await add_message("assistant", response)
+                    # Add the response to the messages with the accumulated tool calls
+                    message_key = f"assistant_{hash(response)}"
+                    
+                    # Add the response to the messages with the accumulated tool calls
+                    tool_calls_to_use = None
+                    if "current_tool_calls" in st.session_state and st.session_state["current_tool_calls"]:
+                        # Use the accumulated tool calls from the session state
+                        tool_calls_to_use = st.session_state["current_tool_calls"]
+                        # Store in persistent storage
+                        st.session_state["persistent_tool_calls"][message_key] = tool_calls_to_use
+                        # Add the message with tool calls
+                        await add_message("assistant", response, tool_calls_to_use)
+                        # Clear the current tool calls for the next response
+                        st.session_state["current_tool_calls"] = []
+                    else:
+                        # No tool calls to add
+                        await add_message("assistant", response)
             except Exception as e:
                 logger.error(f"Error during agent run: {str(e)}", exc_info=True)
                 error_message = f"Sorry, I encountered an error: {str(e)}"

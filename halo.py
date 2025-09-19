@@ -13,7 +13,7 @@ from agno.db.sqlite import SqliteDb
 #from agno.models.google import Gemini
 #from agno.models.groq import Groq
 from agno.models.openai import OpenAIChat
-#from agno.team import Team
+from agno.team import Team
 from agno.tools import Toolkit
 from agno.tools.reasoning import ReasoningTools
 from agno.utils.log import logger
@@ -30,7 +30,7 @@ tmp_dir = cwd.joinpath("tmp")
 tmp_dir.mkdir(exist_ok=True, parents=True)
 
 # Define paths for storage, memory and knowledge
-STORAGE_PATH = tmp_dir.joinpath("halo_sessions.db")
+SESSIONS_PATH = tmp_dir.joinpath("halo_sessions.db")
 MEMORY_PATH = tmp_dir.joinpath("halo_memory.db")
 # Use a user-specific directory for knowledge to avoid permission issues
 KNOWLEDGE_PATH = Path(os.path.join(os.path.expanduser("~"), "halo_knowledge"))
@@ -47,16 +47,17 @@ class HaloConfig:
 
 # Setup memory database
 halo_memory = MemoryManager(
-    db=SqliteDb(table_name="halo_memory", db_file=str(MEMORY_PATH)),
+    db=SqliteDb(db_file=str(MEMORY_PATH)),
     # Select the model used for memory creation and updates. If unset, the default model of the Agent is used.
     #model=OpenAIChat(id="gpt-5-mini"),
-    # You can also provide additional instructions
-    additional_instructions="Don't store the user's real name"
+    # You can also provide additional instructions for memory management
+    additional_instructions="Store important user information and preferences to personalize interactions"
 )
 
-# Setup storage database
-halo_storage = SqliteDb(table_name="halo_sessions", db_file=str(STORAGE_PATH))
-# Initialize LanceDb with error handling to create table if it doesn't exist
+# Setup sessions storage database
+halo_sessions = SqliteDb(db_file=str(SESSIONS_PATH))
+
+# setup knowledge database
 try:
     # First try to initialize with existing table
     halo_knowledge = HaloKnowledge(
@@ -351,22 +352,23 @@ def create_halo(
 
     halo = Team(
         name="HALO Agent Interface",
-        mode="coordinate",
         model=model,
         user_id=config.user_id,
         session_id=session_id,
         tools=tools,
         members=agents,
-        memory=halo_memory,
-        storage=halo_storage,
+        db=halo_sessions,
         knowledge=halo_knowledge,
         description=description,
         instructions=instructions,
-        enable_team_history=True,
+        respond_directly=True,  # Team can respond directly without always delegating
+        delegate_task_to_all_members=False,  # Don't automatically delegate to all members
+        determine_input_for_members=True,  # Team determines what input each member gets
+        #enable_team_history=True,
         read_team_history=True,
-        num_of_interactions_from_history=3,
+        #num_of_interactions_from_history=3,
         show_members_responses=True,
-        enable_agentic_memory=True,
+        enable_user_memories=True,  # This enables memory functionality
         markdown=True,
         debug_mode=debug_mode,
     )

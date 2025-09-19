@@ -12,7 +12,7 @@ from agno.agent import Agent
 from agno.memory import MemoryManager
 from agno.knowledge.knowledge import Knowledge
 from agno.models.base import Model
-from agno.tools.thinking import ThinkingTools
+#from agno.tools.thinking import ThinkingTools
 
 # Windows-specific event loop policy for asyncio compatibility
 if sys.platform == 'win32':
@@ -49,9 +49,12 @@ def create_gptimage1_agent(
         name="GPTImage1",
         role="Generate images",
         model=model_copy,
-        memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
-        tools=[ThinkingTools(), GPTImage1Tools()],
+        tools=[GPTImage1Tools()],
         description=dedent("""\
             You are an experienced AI artist with expertise in various artistic styles,
             from photorealism to abstract art. You have a deep understanding of composition,

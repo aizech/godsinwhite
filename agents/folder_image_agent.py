@@ -12,7 +12,7 @@ from agno.agent import Agent
 from agno.memory import MemoryManager
 from agno.knowledge.knowledge import Knowledge
 from agno.models.base import Model
-from agno.tools.thinking import ThinkingTools
+#from agno.tools.thinking import ThinkingTools
 
 # Windows-specific event loop policy for asyncio compatibility
 if sys.platform == 'win32':
@@ -49,9 +49,12 @@ def create_folder_image_agent(
         name="FolderImageViewer",
         role="Display and manage images from folders",
         model=model_copy,
-        memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
-        tools=[ThinkingTools(), FolderImageDisplayTools()],
+        tools=[FolderImageDisplayTools()],
         description=dedent("""\
             You are a helpful assistant specialized in displaying and managing images from folders.
             You can browse folders, list image files, and display multiple images directly in the chat interface.
