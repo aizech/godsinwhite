@@ -318,32 +318,111 @@ async def selected_agents() -> List[str]:
     return selected_agents
 
 
+def get_memory_timestamp(halo_team, memory, user_id):
+    """Try to get timestamp from the database for a memory."""
+    try:
+        # Try to access the database directly to get timestamp information
+        if hasattr(halo_team, 'db') and hasattr(halo_team.db, 'connection'):
+            # Check if memory has an ID we can use to query the database
+            memory_id = getattr(memory, 'memory_id', None) or getattr(memory, 'id', None)
+            if memory_id:
+                # Try to query the database for creation timestamp
+                try:
+                    # Execute a raw SQL query to get the timestamp
+                    query = "SELECT created_at FROM agno_memories WHERE id = ? AND user_id = ?"
+                    result = halo_team.db.connection.execute(query, (memory_id, user_id)).fetchone()
+                    if result and result[0]:
+                        from datetime import datetime
+                        if isinstance(result[0], str):
+                            timestamp = datetime.fromisoformat(result[0].replace('Z', '+00:00'))
+                        else:
+                            timestamp = result[0]
+                        return timestamp.strftime("%Y-%m-%d %H:%M")
+                except Exception as e:
+                    logger.debug(f"Could not query database for timestamp: {e}")
+        
+        # Fallback: check if memory object has any timestamp attributes
+        for attr in ['created_at', 'created', 'timestamp', 'date_created', 'updated_at', 'last_updated']:
+            if hasattr(memory, attr):
+                timestamp = getattr(memory, attr)
+                if timestamp:
+                    try:
+                        return timestamp.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        return str(timestamp)
+        
+        return "No timestamp"
+    except Exception as e:
+        logger.debug(f"Error getting memory timestamp: {e}")
+        return "No timestamp"
+
+
 async def show_user_memories(halo_team, user_id: str) -> None:
     """Show user memories in a streamlit container."""
 
     with st.container():
         # Get user memories from the Team's memory system
+        user_memories = []
         try:
-            # Use the Team's get_user_memories method if available
+            # Try multiple methods to get user memories
             if hasattr(halo_team, 'get_user_memories'):
-                user_memories = halo_team.get_user_memories(user_id=user_id)
-                # Handle case where get_user_memories returns None
-                if user_memories is None:
-                    user_memories = []
-            else:
-                # Fallback: try to access memories through the database
+                try:
+                    memories = halo_team.get_user_memories(user_id=user_id)
+                    if memories is not None:
+                        user_memories = memories
+                except Exception as e:
+                    logger.debug(f"get_user_memories failed: {e}")
+            
+            # If no memories from Team method, try database directly
+            if not user_memories and hasattr(halo_team, 'db'):
+                try:
+                    # Try to access memories directly from the database
+                    if hasattr(halo_team.db, 'get_user_memories'):
+                        memories = halo_team.db.get_user_memories(user_id=user_id)
+                        if memories:
+                            user_memories = memories
+                    elif hasattr(halo_team.db, 'connection'):
+                        # Direct SQL query as fallback
+                        query = "SELECT * FROM agno_memories WHERE user_id = ? ORDER BY created_at DESC"
+                        cursor = halo_team.db.connection.execute(query, (user_id,))
+                        rows = cursor.fetchall()
+                        if rows:
+                            # Convert rows to memory-like objects (simplified)
+                            user_memories = []
+                            for row in rows:
+                                # Create a simple object with the memory data
+                                memory_obj = type('Memory', (), {
+                                    'memory_id': row[0] if len(row) > 0 else None,
+                                    'memory': row[1] if len(row) > 1 else str(row),
+                                    'topics': [],
+                                    'user_id': user_id
+                                })()
+                                user_memories.append(memory_obj)
+                except Exception as e:
+                    logger.debug(f"Database direct access failed: {e}")
+            
+            # Ensure we always have a list
+            if user_memories is None:
                 user_memories = []
-                logger.warning("Team object doesn't have get_user_memories method")
+                
         except Exception as e:
             logger.error(f"Error getting user memories: {e}")
             user_memories = []
             
         with st.expander(f"💭 Memories for {user_id}", expanded=False):
+            # Debug: Log memory object attributes if memories exist
             if user_memories and len(user_memories) > 0:
-                # Initialize session state for memory selection
-                if "selected_memories" not in st.session_state:
-                    st.session_state.selected_memories = {}
-                
+                first_memory = user_memories[0]
+                #logger.debug(f"UserMemory object attributes: {dir(first_memory)}")
+                #logger.debug(f"UserMemory object type: {type(first_memory)}")
+                #logger.debug(f"UserMemory object vars: {vars(first_memory) if hasattr(first_memory, '__dict__') else 'No __dict__'}")
+            
+            # Initialize session state for memory selection
+            if "selected_memories" not in st.session_state:
+                st.session_state.selected_memories = {}
+            
+            # Always show the memory table (empty if no memories)
+            if user_memories and len(user_memories) > 0:
                 # Create a dataframe from the memories with checkbox column
                 memory_data = {
                     "Select": [st.session_state.selected_memories.get(i, False) for i in range(len(user_memories))],
@@ -353,8 +432,7 @@ async def show_user_memories(halo_team, user_id: str) -> None:
                         for memory in user_memories
                     ],
                     "Created": [
-                        getattr(memory, 'created_at', '').strftime("%Y-%m-%d %H:%M") if hasattr(memory, 'created_at') and getattr(memory, 'created_at') else "N/A"
-                        for memory in user_memories
+                        get_memory_timestamp(halo_team, memory, user_id) for memory in user_memories
                     ],
                 }
 
@@ -384,13 +462,14 @@ async def show_user_memories(halo_team, user_id: str) -> None:
                 # Show selection info
                 if selected_count > 0:
                     st.info(f"{selected_count} memory/memories selected")
-                
             else:
+                # Show empty state but still allow refresh
                 st.info("No memories found, tell me about yourself!")
                 selected_count = 0
 
+            # Always show the control buttons
             # Button layout - add delete button if memories are selected
-            if len(user_memories) > 0 and selected_count > 0:
+            if user_memories and len(user_memories) > 0 and selected_count > 0:
                 col1, col2, col3 = st.columns([0.33, 0.33, 0.34])
             else:
                 col1, col2 = st.columns([0.5, 0.5])
@@ -408,6 +487,8 @@ async def show_user_memories(halo_team, user_id: str) -> None:
                     if "memory_refresh_count" not in st.session_state:
                         st.session_state.memory_refresh_count = 0
                     st.session_state.memory_refresh_count += 1
+                    # Force page refresh to reload memories from database
+                    st.rerun()
             
             # Delete selected memories button
             if col3 is not None:
@@ -455,14 +536,67 @@ async def show_user_memories(halo_team, user_id: str) -> None:
                                     if idx < len(user_memories):
                                         try:
                                             memory_to_delete = user_memories[idx]
-                                            # Use the memory_id to delete directly from halo_memory
-                                            if memory_to_delete.memory_id:
-                                                halo_team.memory.delete_user_memory(
-                                                    memory_id=memory_to_delete.memory_id,
-                                                    user_id=user_id,
-                                                    refresh_from_db=False  # We'll refresh once at the end
-                                                )
-                                                deleted_count += 1
+                                            
+                                            # Debug: Show memory object structure
+                                            logger.info(f"Attempting to delete memory {idx}: {vars(memory_to_delete) if hasattr(memory_to_delete, '__dict__') else str(memory_to_delete)}")
+                                            
+                                            # Use the memory_id to delete from the Team's database
+                                            memory_id = getattr(memory_to_delete, 'memory_id', None) or getattr(memory_to_delete, 'id', None)
+                                            logger.info(f"Memory ID found: {memory_id}")
+                                            
+                                            if memory_id:
+                                                # Try to delete using the Team's database
+                                                if hasattr(halo_team, 'db') and hasattr(halo_team.db, 'delete_user_memory'):
+                                                    logger.info(f"Using db.delete_user_memory method")
+                                                    try:
+                                                        # Try with just memory_id (current Agno framework signature)
+                                                        halo_team.db.delete_user_memory(memory_id=memory_id)
+                                                        deleted_count += 1
+                                                        logger.info(f"Successfully deleted memory {memory_id} using db method")
+                                                    except TypeError as te:
+                                                        logger.debug(f"delete_user_memory signature error: {te}")
+                                                        # Try alternative method signatures
+                                                        try:
+                                                            halo_team.db.delete_user_memory(memory_id)
+                                                            deleted_count += 1
+                                                            logger.info(f"Successfully deleted memory {memory_id} using alternative signature")
+                                                        except Exception as alt_e:
+                                                            logger.error(f"Alternative method failed: {alt_e}")
+                                                            raise te  # Fall back to SQL deletion
+                                                else:
+                                                    # Fallback: try direct database deletion with multiple table names
+                                                    if hasattr(halo_team, 'db') and hasattr(halo_team.db, 'connection'):
+                                                        try:
+                                                            # Try different possible table names
+                                                            table_names = ['agno_memories', 'memories', 'user_memories', 'agno_user_memories']
+                                                            deleted = False
+                                                            
+                                                            for table_name in table_names:
+                                                                try:
+                                                                    query = f"DELETE FROM {table_name} WHERE id = ? AND user_id = ?"
+                                                                    cursor = halo_team.db.connection.execute(query, (memory_id, user_id))
+                                                                    rows_affected = cursor.rowcount
+                                                                    halo_team.db.connection.commit()
+                                                                    
+                                                                    if rows_affected > 0:
+                                                                        deleted_count += 1
+                                                                        deleted = True
+                                                                        logger.info(f"Successfully deleted memory {memory_id} from table {table_name}")
+                                                                        break
+                                                                except Exception as table_e:
+                                                                    logger.debug(f"Failed to delete from table {table_name}: {table_e}")
+                                                                    continue
+                                                            
+                                                            if not deleted:
+                                                                logger.error(f"Could not delete memory {memory_id} from any table")
+                                                                failed_deletions.append(f"Memory {idx + 1} (not found in DB)")
+                                                                
+                                                        except Exception as db_e:
+                                                            logger.error(f"Database deletion failed: {db_e}")
+                                                            failed_deletions.append(f"Memory {idx + 1} (DB error)")
+                                                    else:
+                                                        logger.warning("No database deletion method available")
+                                                        failed_deletions.append(f"Memory {idx + 1} (no delete method)")
                                             else:
                                                 logger.warning(f"Memory at index {idx} has no memory_id")
                                                 failed_deletions.append(f"Memory {idx + 1} (no ID)")
