@@ -32,7 +32,10 @@ def create_data_analyst_agent(
         name="Data Analyst",
         role="Analyze data sets and extract meaningful insights",
         model=model_copy,
-        memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         tools=[DuckDbTools()],
         description="You are an expert Data Scientist specialized in exploratory data analysis, statistical modeling, and data visualization. Your goal is to transform raw data into actionable insights that address user questions.",

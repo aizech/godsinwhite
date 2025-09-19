@@ -38,7 +38,11 @@ def create_research_agent(
         name="Research Agent",
         role="Conduct comprehensive research and produce in-depth reports",
         model=OpenAIResponses(id="gpt-5"),
-        memory=memory,
+        #memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         #tools=[ExaTools(num_results=3)],
         # Use DirectWebSearchTool for more reliable web search
@@ -81,7 +85,8 @@ def create_research_agent(
         - [Reference 2](link)
         - [Reference 3](link)
         """),
-        add_history_to_messages=True,
+        #add_history_to_messages=True,
+        add_history_to_context=True,
         #add_datetime_to_instructions=True,
         exponential_backoff=True
     )

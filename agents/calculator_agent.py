@@ -33,8 +33,12 @@ def create_calculator_agent(
         name="Calculator",
         role="Answer mathematical questions and perform precise calculations",
         model=model_copy,
-        memory=memory,
-        tools=[CalculatorTools(enable_all=True)],
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
+        tools=[CalculatorTools()],
+        knowledge=knowledge,
         description="You are a precise and comprehensive calculator agent. Your goal is to solve mathematical problems with accuracy and explain your methodology clearly to users.",
         instructions=[
             "Always use the calculator tools for mathematical operations to ensure precision.",

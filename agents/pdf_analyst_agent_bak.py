@@ -48,7 +48,10 @@ def create_pdf_analyst_agent(
         name="PDF Analyst",
         role="Analyze PDF files and extract meaningful insights",
         model=deepcopy(model),
-        memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         tools=[{"type": "file_search"}],
         description="You are an expert PDF Data Analyst specialized in exploratory data analysis, statistical modeling, and data visualization. Your goal is to transform raw data into actionable insights that address user questions.",

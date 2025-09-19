@@ -36,7 +36,11 @@ def create_visualizer_agent(
         role="You are a data visualization expert and business analyst.",
         #model=model_copy,
         model=OpenAIChat(id="gpt-4o"),
-        memory=memory,
+        #memory=memory,
+        # Give the Agent the ability to update memories
+        enable_agentic_memory=True,
+        # OR - Run the MemoryManager automatically after each response
+        enable_user_memories=True,
         knowledge=knowledge,
         tools=[VisualizationTools(output_dir="dashboard_charts")],
         description="You are a data visualization expert and business analyst.",

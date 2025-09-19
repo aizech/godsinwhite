@@ -9,7 +9,7 @@ import sys
 import asyncio
 
 from agno.agent import Agent
-from agno.media import ImageArtifact
+from agno.media import Image
 from agno.team.team import Team
 from agno.tools import Toolkit
 from agno.utils.log import log_debug, logger
@@ -97,7 +97,7 @@ class GPTImage1Tools(Toolkit):
                         img_id = str(uuid4())
                         
                         # Create the ImageArtifact with all required fields
-                        image_artifact = ImageArtifact(
+                        image_artifact = Image(
                             id=img_id,  # Required by Media base class
                             url=img.url,  # Remote URL of the image
                             content=None,  # We don't have the content for URL-based images
@@ -150,7 +150,7 @@ class GPTImage1Tools(Toolkit):
                             
                             # For the ImageArtifact, we'll only set the URL and not the binary content
                             # to avoid serialization issues. The image is already saved to disk.
-                            image_artifact = ImageArtifact(
+                            image_artifact = Image(
                                 id=img_id,  # Required by Media base class
                                 url=file_url,  # Remote location for file
                                 content=None,  # Don't include binary content to avoid serialization issues
