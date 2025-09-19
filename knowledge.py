@@ -1,18 +1,18 @@
 """
-Custom knowledge implementation for the Universal Agent Interface
+Custom knowledge implementation for the HALO Agent Interface
 """
 
 from pathlib import Path
-from typing import Iterator, List, Optional, Any
+from typing import Iterator, List, Optional
 
 from agno.document import Document
 from agno.document.reader.text_reader import TextReader
-from agno.knowledge import AgentKnowledge
+from agno.knowledge.knowledge import Knowledge
 from agno.utils.log import logger
 
 
-class HaloKnowledge(AgentKnowledge):
-    """Custom knowledge implementation for the Universal Agent Interface."""
+class HaloKnowledge(Knowledge):
+    """Custom knowledge implementation for the HALO Agent Interface."""
     
     knowledge_dir: Optional[Path] = None
     formats: List[str] = [".txt", ".md"]

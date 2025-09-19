@@ -6,15 +6,14 @@ from typing import List, Optional
 
 from agents import get_agent
 from agno.agent import Agent
-from agno.embedder.openai import OpenAIEmbedder
-from agno.memory.v2 import Memory
-from agno.memory.v2.db.sqlite import SqliteMemoryDb
+from agno.knowledge.embedder.openai import OpenAIEmbedder
+from agno.memory import MemoryManager
+from agno.db.sqlite import SqliteDb
 #from agno.models.anthropic import Claude
 #from agno.models.google import Gemini
 #from agno.models.groq import Groq
 from agno.models.openai import OpenAIChat
-from agno.storage.sqlite import SqliteStorage
-from agno.team import Team
+#from agno.team import Team
 from agno.tools import Toolkit
 from agno.tools.reasoning import ReasoningTools
 from agno.utils.log import logger
@@ -46,11 +45,17 @@ class HaloConfig:
     agents: Optional[List[str]] = None
 
 
-halo_memory = Memory(
-    db=SqliteMemoryDb(table_name="halo_memory", db_file=str(MEMORY_PATH))
+# Setup memory database
+halo_memory = MemoryManager(
+    db=SqliteDb(table_name="halo_memory", db_file=str(MEMORY_PATH)),
+    # Select the model used for memory creation and updates. If unset, the default model of the Agent is used.
+    #model=OpenAIChat(id="gpt-5-mini"),
+    # You can also provide additional instructions
+    additional_instructions="Don't store the user's real name"
 )
 
-halo_storage = SqliteStorage(db_file=str(STORAGE_PATH), table_name="halo_sessions")
+# Setup storage database
+halo_storage = SqliteDb(table_name="halo_sessions", db_file=str(STORAGE_PATH))
 # Initialize LanceDb with error handling to create table if it doesn't exist
 try:
     # First try to initialize with existing table

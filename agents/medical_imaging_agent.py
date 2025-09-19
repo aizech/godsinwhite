@@ -6,8 +6,8 @@ This module provides a factory function to create a medical imaging analysis age
 from copy import deepcopy
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.tools.duckduckgo import DuckDuckGoTools
 
@@ -68,7 +68,7 @@ FULL_INSTRUCTIONS = BASE_PROMPT + ANALYSIS_TEMPLATE
 
 
 def create_medical_imaging_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a medical imaging agent that can analyze various types of medical images.
@@ -95,6 +95,6 @@ def create_medical_imaging_agent(
         instructions=FULL_INSTRUCTIONS,
         markdown=True,  # Enable markdown formatting for structured output
         add_history_to_messages=True,
-        add_datetime_to_instructions=True,
+        #add_datetime_to_instructions=True,
         exponential_backoff=True
     )

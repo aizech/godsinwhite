@@ -9,8 +9,8 @@ import sys
 import os
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 from agno.models.openai import OpenAIResponses
 #from agno.tools.duckduckgo import DuckDuckGoTools
@@ -20,7 +20,7 @@ from agno.models.openai import OpenAIResponses
 
 
 def create_research_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a research agent that can search for and synthesize information.
@@ -82,6 +82,6 @@ def create_research_agent(
         - [Reference 3](link)
         """),
         add_history_to_messages=True,
-        add_datetime_to_instructions=True,
+        #add_datetime_to_instructions=True,
         exponential_backoff=True
     )

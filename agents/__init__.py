@@ -9,8 +9,8 @@ import inspect
 from typing import Optional
 
 from agno.agent import Agent
-from agno.knowledge import AgentKnowledge
-from agno.memory.v2 import Memory
+from agno.knowledge.knowledge import Knowledge
+from agno.memory import MemoryManager
 from agno.models.base import Model
 
 # Dynamically discover and import agent modules
@@ -45,7 +45,7 @@ for filename in os.listdir(current_dir):
 __all__ = list(agent_factory_funcs.keys()) + ["get_agent"]
 
 def get_agent(
-    agent_name: str, model: Model, memory: Memory, knowledge: AgentKnowledge,
+    agent_name: str, model: Model, memory: MemoryManager, knowledge: Knowledge,
     debug_mode: bool = True
 ) -> Optional[Agent]:
     """

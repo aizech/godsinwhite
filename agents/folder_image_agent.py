@@ -9,8 +9,8 @@ from copy import deepcopy
 from textwrap import dedent
 
 from agno.agent import Agent
-from agno.memory.v2 import Memory
-from agno.knowledge import AgentKnowledge
+from agno.memory import MemoryManager
+from agno.knowledge.knowledge import Knowledge
 from agno.models.base import Model
 from agno.tools.thinking import ThinkingTools
 
@@ -26,7 +26,7 @@ if parent_dir not in sys.path:
 
 
 def create_folder_image_agent(
-    model: Model, memory: Memory, knowledge: AgentKnowledge
+    model: Model, memory: MemoryManager, knowledge: Knowledge
 ) -> Agent:
     """
     Create a folder image agent that can display images from folders.
